@@ -1,0 +1,4 @@
+.env
+/uploads
+faiss_metadata.npy
+faiss.index

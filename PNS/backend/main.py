@@ -1,19 +1,20 @@
 from fastapi import FastAPI
 from database import init_db
-from requirement import router
+from requirement import router as requirement_router
+from functional import router as functional_router
 import uvicorn
 
 app = FastAPI(title="RFP Creation Project")
 
 
-# ✅ Run DB initialization ONLY once on app startup
 @app.on_event("startup")
 def on_startup():
     init_db()
 
 
-# ✅ Register routers
-app.include_router(router)
+
+app.include_router(requirement_router)
+app.include_router(functional_router)
 
 
 @app.get("/health")

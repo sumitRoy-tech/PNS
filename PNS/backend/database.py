@@ -1,13 +1,27 @@
-from sqlalchemy import create_engine, Column, String, Float, DateTime
+from sqlalchemy import create_engine, Column, String, Float, DateTime, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = "mysql+pymysql://root:12345@localhost/RFP_Creation_Project"
+DB_NAME = "RFP_Creation_Project"
+DB_USER = "root"
+DB_PASSWORD = "12345"
+DB_HOST = "localhost"
 
+# Engine WITHOUT database (important)
+engine_no_db = create_engine(
+    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}"
+)
+
+# Create DB if not exists
+with engine_no_db.connect() as conn:
+    conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}"))
+
+# Engine WITH database
+DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
 
+SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
 

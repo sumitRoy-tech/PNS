@@ -1,15 +1,20 @@
 from fastapi import FastAPI
 from database import init_db
-from requirement import router as requirement_router
+from requirement import router
+import uvicorn
 
 app = FastAPI(title="RFP Creation Project")
-#initialize DB
+
 init_db()
+app.include_router(router)
 
-app.include_router(requirement_router)
 
 
-@app.get("/")
+
+@app.get("/health")
 def root():
-    return {"message": "RFP Creation Backend Running"}
+    return {"message": "healthy"}
 
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8003, reload=True)

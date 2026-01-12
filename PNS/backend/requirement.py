@@ -16,33 +16,26 @@ from io import BytesIO
 
 router = APIRouter(prefix="/requirements", tags=["Requirements"])
 
-# ==================== PATH SETUP ====================
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 FAISS_INDEX_PATH = os.path.join(BASE_DIR, "faiss.index")
 
-# ==================== FAISS SETUP ====================
-
-# Load embedding model
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-dimension = 384  # all-MiniLM-L6-v2 produces 384-dim vectors
+dimension = 384 
 
 if os.path.exists(FAISS_INDEX_PATH):
     faiss_index = faiss.read_index(FAISS_INDEX_PATH)
 else:
     faiss_index = faiss.IndexFlatL2(dimension)
 
-# Store file metadata for FAISS index mapping
 FAISS_METADATA_PATH = os.path.join(BASE_DIR, "faiss_metadata.npy")
 if os.path.exists(FAISS_METADATA_PATH):
     faiss_metadata = list(np.load(FAISS_METADATA_PATH, allow_pickle=True))
 else:
     faiss_metadata = []
 
-# ==================== HELPERS ====================
 
 def build_project_id(pk_id: int) -> str:
     """Generate collision-proof business ID (file-safe format)"""

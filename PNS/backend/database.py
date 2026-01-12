@@ -11,13 +11,16 @@ DB_USER = "root"
 DB_PASSWORD = "12345"
 DB_HOST = "localhost"
 
+# Engine WITHOUT database
 engine_no_db = create_engine(
     f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}"
 )
 
+# Create DB if not exists
 with engine_no_db.connect() as conn:
     conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}"))
 
+# Engine WITH database
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
 
@@ -28,8 +31,10 @@ Base = declarative_base()
 class ProjectCredential(Base):
     __tablename__ = "project_credentials"
 
+    # DATABASE-GENERATED PRIMARY KEY
     pk_id = Column(Integer, primary_key=True, autoincrement=True, index=True)
 
+    # BUSINESS ID (HUMAN READABLE)
     id = Column(String(50), unique=True, index=True)
 
     title = Column(String(255), nullable=False)
@@ -47,55 +52,96 @@ class ProjectCredential(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationship to uploaded files
     files = relationship("UploadedFile", back_populates="project")
     
+    # Relationship to functional assessments
     assessments = relationship("FunctionalAssessment", back_populates="project")
+    
+    # Relationship to technical committee reviews
+    technical_reviews = relationship("TechnicalCommitteeReview", back_populates="project")
 
 
 class UploadedFile(Base):
     __tablename__ = "uploaded_files"
 
+    # PRIMARY KEY
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
 
+    # FOREIGN KEY to project_credentials
     project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
-    project_id = Column(String(50), nullable=False, index=True)  
+    project_id = Column(String(50), nullable=False, index=True)  # Business ID for easy lookup
 
-    label = Column(String(10), nullable=False) 
+    # FILE INFO
+    label = Column(String(10), nullable=False)  # a, b, c, ...
     original_filename = Column(String(255), nullable=False)
     saved_filename = Column(String(255), nullable=False, unique=True)
     file_extension = Column(String(20), nullable=False)
     file_size_kb = Column(Float, nullable=False)
     content_type = Column(String(100), nullable=True)
 
-    faiss_index_id = Column(Integer, nullable=True)  
-    text_extracted = Column(Text, nullable=True)  
+    # VECTOR DB INFO
+    faiss_index_id = Column(Integer, nullable=True)  # Position in FAISS index
+    text_extracted = Column(Text, nullable=True)  # Extracted text for reference
 
-
+    # TIMESTAMPS
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationship back to project
     project = relationship("ProjectCredential", back_populates="files")
 
 
 class FunctionalAssessment(Base):
     __tablename__ = "functional_assessments"
 
+    # PRIMARY KEY
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
 
+    # FOREIGN KEY to project_credentials
     project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
-    project_id = Column(String(50), nullable=False, index=True) 
+    project_id = Column(String(50), nullable=False, index=True)  # Business ID for easy lookup
 
+    # ASSESSMENT FIELDS
     functional_fit_assessment = Column(Text, nullable=False)
     technical_feasibility = Column(Text, nullable=False)
     risk_assessment = Column(Text, nullable=False)
     recommendations = Column(Text, nullable=False)
 
-    status = Column(String(50), default="submitted")  
+    # STATUS
+    status = Column(String(50), default="submitted")  # submitted, reviewed, approved, rejected
 
+    # TIMESTAMPS
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-
+    # Relationship back to project
     project = relationship("ProjectCredential", back_populates="assessments")
+
+
+class TechnicalCommitteeReview(Base):
+    __tablename__ = "technical_committee_reviews"
+
+    # PRIMARY KEY
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    # FOREIGN KEY to project_credentials
+    project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
+    project_id = Column(String(50), nullable=False, index=True)  # Business ID for easy lookup
+
+    # REVIEW FIELDS
+    architecture_review = Column(Text, nullable=False)
+    security_assessment = Column(Text, nullable=False)
+    integration_complexity = Column(Text, nullable=False)
+    rbi_compliance_check = Column(Text, nullable=False)
+    technical_committee_recommendation = Column(Text, nullable=False)
+
+
+    # TIMESTAMPS
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship back to project
+    project = relationship("ProjectCredential", back_populates="technical_reviews")
 
 
 def init_db():

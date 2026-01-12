@@ -2,4 +2,4 @@
 /uploads
 faiss_metadata.npy
 faiss.index
-/__pycache__
+__pycache__/

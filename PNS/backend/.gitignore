@@ -3,3 +3,4 @@
 faiss_metadata.npy
 faiss.index
 __pycache__/
+./generated_rfps

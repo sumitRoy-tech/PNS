@@ -60,6 +60,9 @@ class ProjectCredential(Base):
     
     # Relationship to technical committee reviews
     technical_reviews = relationship("TechnicalCommitteeReview", back_populates="project")
+    
+    # Relationship to generated RFPs
+    generated_rfps = relationship("GeneratedRFP", back_populates="project")
 
 
 class UploadedFile(Base):
@@ -135,13 +138,42 @@ class TechnicalCommitteeReview(Base):
     rbi_compliance_check = Column(Text, nullable=False)
     technical_committee_recommendation = Column(Text, nullable=False)
 
-
     # TIMESTAMPS
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship back to project
     project = relationship("ProjectCredential", back_populates="technical_reviews")
+
+
+class GeneratedRFP(Base):
+    __tablename__ = "generated_rfps"
+
+    # PRIMARY KEY
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    # FOREIGN KEY to project_credentials
+    project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
+    project_id = Column(String(50), nullable=False, index=True)
+
+    # RFP CONTENT
+    rfp_content = Column(Text, nullable=False)  # Full RFP text content
+    rfp_filename = Column(String(255), nullable=False)  # PDF filename
+    rfp_filepath = Column(String(500), nullable=False)  # Full path to PDF
+
+    # VERSION CONTROL
+    version = Column(Integer, default=1)
+
+    # METADATA
+    generated_by = Column(String(100), default="Claude AI")
+    file_size_kb = Column(Float, nullable=True)
+
+    # TIMESTAMPS
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship back to project
+    project = relationship("ProjectCredential", back_populates="generated_rfps")
 
 
 def init_db():

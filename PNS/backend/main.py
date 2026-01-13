@@ -3,6 +3,7 @@ from database import init_db
 from requirement import router as requirement_router
 from functional import router as functional_router
 from technical_committee_review import router as technical_review_router
+from tender_drafting import router as tender_router
 import uvicorn
 
 app = FastAPI(title="RFP Creation Project")
@@ -18,6 +19,7 @@ def on_startup():
 app.include_router(requirement_router)
 app.include_router(functional_router)
 app.include_router(technical_review_router)
+app.include_router(tender_router)
 
 
 @app.get("/health")

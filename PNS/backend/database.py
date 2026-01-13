@@ -63,6 +63,9 @@ class ProjectCredential(Base):
     
     # Relationship to generated RFPs
     generated_rfps = relationship("GeneratedRFP", back_populates="project")
+    
+    # Relationship to tender drafts
+    tender_drafts = relationship("TenderDraft", back_populates="project")
 
 
 class UploadedFile(Base):
@@ -174,6 +177,34 @@ class GeneratedRFP(Base):
 
     # Relationship back to project
     project = relationship("ProjectCredential", back_populates="generated_rfps")
+
+
+class TenderDraft(Base):
+    __tablename__ = "tender_drafts"
+
+    # PRIMARY KEY
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    # FOREIGN KEY to project_credentials
+    project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
+    project_id = Column(String(50), nullable=False, index=True)
+
+    # TENDER FIELDS
+    rfp_template = Column(String(255), nullable=False)  # Select RFP Template
+    bid_validity_period = Column(Integer, nullable=False)  # Days only (e.g., 60, 90)
+    submission_deadline = Column(DateTime, nullable=False)  # Date
+    emd_amount = Column(Float, nullable=False)  # Number only
+    eligibility_criteria = Column(Text, nullable=False)
+
+    # AUTHORITY DECISION (0 = Rejected, 1 = Approved)
+    authority_decision = Column(Integer, nullable=True, default=None)
+
+    # TIMESTAMPS
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship back to project
+    project = relationship("ProjectCredential", back_populates="tender_drafts")
 
 
 def init_db():

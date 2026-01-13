@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="RFP Creation Project")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # or ["*"] for all origins
+    allow_origins=["*"],  # or ["*"] for all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

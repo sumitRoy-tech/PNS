@@ -5,9 +5,17 @@ from functional import router as functional_router
 from technical_committee_review import router as technical_review_router
 from tender_drafting import router as tender_router
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(title="RFP Creation Project")
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # or ["*"] for all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Run DB initialization ONLY once on app startup
 @app.on_event("startup")

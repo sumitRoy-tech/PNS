@@ -66,6 +66,12 @@ class ProjectCredential(Base):
     
     # Relationship to tender drafts
     tender_drafts = relationship("TenderDraft", back_populates="project")
+    
+    # Relationship to publish RFPs
+    publish_rfps = relationship("PublishRFP", back_populates="project")
+    
+    # Relationship to vendor bids
+    vendor_bids = relationship("VendorBid", back_populates="project")
 
 
 class UploadedFile(Base):
@@ -205,6 +211,67 @@ class TenderDraft(Base):
 
     # Relationship back to project
     project = relationship("ProjectCredential", back_populates="tender_drafts")
+
+
+class PublishRFP(Base):
+    __tablename__ = "publish_rfps"
+
+    # PRIMARY KEY
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    # FOREIGN KEY to project_credentials
+    project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
+    project_id = Column(String(50), nullable=False, index=True)
+
+    # PUBLICATION CHANNELS (0 = No, 1 = Yes)
+    bank_website = Column(Integer, nullable=False, default=0)
+    cppp = Column(Integer, nullable=False, default=0)
+    newspaper_publication = Column(Integer, nullable=False, default=0)
+    gem_portal = Column(Integer, nullable=False, default=0)
+
+    # DATES
+    publication_date = Column(DateTime, nullable=True)
+    pre_bid_meeting = Column(DateTime, nullable=True)
+    query_last_date = Column(DateTime, nullable=True)
+    bid_opening_date = Column(DateTime, nullable=True)
+
+    # TIMESTAMPS
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship back to project
+    project = relationship("ProjectCredential", back_populates="publish_rfps")
+
+
+class VendorBid(Base):
+    __tablename__ = "vendor_bids"
+
+    # PRIMARY KEY
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    # FOREIGN KEY to project_credentials
+    project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
+    project_id = Column(String(50), nullable=False, index=True)
+
+    # VENDOR INFO
+    vendor_name = Column(String(255), nullable=False)
+
+    tech_score = Column(Float, nullable=True)     # e.g. 45.6
+    comm_score = Column(Float, nullable=True)     # e.g. 42.3
+    total_score = Column(Float, nullable=True)
+    
+    # BID VALUES
+    commercial_bid = Column(Float, nullable=False)  # Random value between 15000000-95000000
+    technical_score = Column(Integer, nullable=False)  # Technical percentage (no % sign)
+    
+    # RANKING
+    rank = Column(Integer, nullable=False)  # Rank based on commercial bid (lowest = 1)
+
+    # TIMESTAMPS
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship back to project
+    project = relationship("ProjectCredential", back_populates="vendor_bids")
 
 
 def init_db():

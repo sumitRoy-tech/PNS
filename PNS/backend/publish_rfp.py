@@ -515,7 +515,6 @@ def submit_vendor_evaluation(project_id: str):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Fetch existing vendor bids FIRST
         vendors = db.query(VendorBid).filter(
             VendorBid.project_pk_id == project.pk_id
         ).all()
@@ -534,7 +533,6 @@ def submit_vendor_evaluation(project_id: str):
 
             evaluated.append(vendor)
 
-        # Rank by total_score DESC
         evaluated.sort(key=lambda x: x.total_score, reverse=True)
 
         for idx, vendor in enumerate(evaluated, start=1):
@@ -542,10 +540,15 @@ def submit_vendor_evaluation(project_id: str):
 
         db.commit()
 
-        # Read back from DB
         final_bids = db.query(VendorBid).filter(
             VendorBid.project_pk_id == project.pk_id
         ).order_by(VendorBid.rank).all()
+
+        # ✅ WINNER (Rank 1)
+        winner = {
+            "vendor_name": final_bids[0].vendor_name,
+            "commercial_bid": final_bids[0].commercial_bid
+        }
 
         return {
             "message": "Vendor bids submitted successfully",
@@ -553,6 +556,7 @@ def submit_vendor_evaluation(project_id: str):
             "project_title": project.title,
             "total_vendors_received": len(final_bids),
             "total_qualified_vendors": len(final_bids),
+            "winner": winner,
             "vendor_bids": [
                 {
                     "vendor_name": v.vendor_name,

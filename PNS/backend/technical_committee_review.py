@@ -633,22 +633,25 @@ Each section should be clearly labeled with the section number and title.
 def download_rfp(rfp_id: int):
     """Download generated RFP PDF"""
     db = SessionLocal()
-    
+
     try:
         rfp = db.query(GeneratedRFP).filter(GeneratedRFP.id == rfp_id).first()
-        
+
         if not rfp:
             raise HTTPException(status_code=404, detail="RFP not found")
-        
+
         if not os.path.exists(rfp.rfp_filepath):
             raise HTTPException(status_code=404, detail="RFP file not found on server")
-        
+
         return FileResponse(
-            rfp.rfp_filepath,
+            path=rfp.rfp_filepath,
+            media_type="application/pdf",
             filename=rfp.rfp_filename,
-            media_type="application/pdf"
+            headers={
+                "Content-Disposition": f'attachment; filename="{rfp.rfp_filename}"'
+            }
         )
-    
+
     finally:
         db.close()
 

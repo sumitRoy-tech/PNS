@@ -231,10 +231,9 @@ def get_all_publish_rfps():
             ).first()
             
             result.append({
-                "publish_id": record.id,
+                "id": record.id,
                 "project_id": record.project_id,
                 "project_title": project.title if project else None,
-                "department": project.department if project else None,
                 "bank_website": record.bank_website,
                 "cppp": record.cppp,
                 "newspaper_publication": record.newspaper_publication,
@@ -243,12 +242,13 @@ def get_all_publish_rfps():
                 "pre_bid_meeting": record.pre_bid_meeting.strftime("%Y-%m-%d") if record.pre_bid_meeting else None,
                 "query_last_date": record.query_last_date.strftime("%Y-%m-%d") if record.query_last_date else None,
                 "bid_opening_date": record.bid_opening_date.strftime("%Y-%m-%d") if record.bid_opening_date else None,
-                "created_at": record.created_at.isoformat() if record.created_at else None
+                "created_at": record.created_at.isoformat() if record.created_at else None,
+                "updated_at": record.updated_at.isoformat() if record.updated_at else None
             })
         
         return {
             "total_records": len(result),
-            "records": result
+            "publish_rfps": result
         }
     
     finally:
@@ -256,8 +256,8 @@ def get_all_publish_rfps():
 
 
 @router.get("/{project_id}")
-def get_publish_rfp(project_id: str):
-    """Get publish RFP details for a specific project"""
+def get_publish_rfp_by_project(project_id: str):
+    """Get publish RFP data for a specific project"""
     db = SessionLocal()
     
     try:
@@ -268,87 +268,48 @@ def get_publish_rfp(project_id: str):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        record = db.query(PublishRFP).filter(
+        publish_rfp = db.query(PublishRFP).filter(
             PublishRFP.project_pk_id == project.pk_id
         ).first()
         
-        if not record:
-            raise HTTPException(status_code=404, detail="Publish RFP not found for this project")
+        if not publish_rfp:
+            raise HTTPException(status_code=404, detail="No publish RFP data found for this project")
         
         return {
-            "publish_id": record.id,
-            "project_id": record.project_id,
+            "project_id": project.id,
             "project_title": project.title,
-            "department": project.department,
-            "bank_website": record.bank_website,
-            "cppp": record.cppp,
-            "newspaper_publication": record.newspaper_publication,
-            "gem_portal": record.gem_portal,
-            "publication_date": record.publication_date.strftime("%Y-%m-%d") if record.publication_date else None,
-            "pre_bid_meeting": record.pre_bid_meeting.strftime("%Y-%m-%d") if record.pre_bid_meeting else None,
-            "query_last_date": record.query_last_date.strftime("%Y-%m-%d") if record.query_last_date else None,
-            "bid_opening_date": record.bid_opening_date.strftime("%Y-%m-%d") if record.bid_opening_date else None,
-            "created_at": record.created_at.isoformat() if record.created_at else None,
-            "updated_at": record.updated_at.isoformat() if record.updated_at else None
+            "publish_rfp": {
+                "id": publish_rfp.id,
+                "bank_website": publish_rfp.bank_website,
+                "cppp": publish_rfp.cppp,
+                "newspaper_publication": publish_rfp.newspaper_publication,
+                "gem_portal": publish_rfp.gem_portal,
+                "publication_date": publish_rfp.publication_date.strftime("%Y-%m-%d") if publish_rfp.publication_date else None,
+                "pre_bid_meeting": publish_rfp.pre_bid_meeting.strftime("%Y-%m-%d") if publish_rfp.pre_bid_meeting else None,
+                "query_last_date": publish_rfp.query_last_date.strftime("%Y-%m-%d") if publish_rfp.query_last_date else None,
+                "bid_opening_date": publish_rfp.bid_opening_date.strftime("%Y-%m-%d") if publish_rfp.bid_opening_date else None,
+                "created_at": publish_rfp.created_at.isoformat() if publish_rfp.created_at else None,
+                "updated_at": publish_rfp.updated_at.isoformat() if publish_rfp.updated_at else None
+            }
         }
     
     finally:
         db.close()
 
 
-# ==================== VENDOR BIDS ====================
-
-class VendorInfo(BaseModel):
-    vendor_name: str
-    Technical_Bid: Optional[int] = None
-    Commercial_Bid: Optional[int] = None
-    EMD: Optional[int] = None
-    status: Optional[str] = None
-
-    class Config:
-        # Allow field names with spaces by using aliases
-        populate_by_name = True
+# ==================== VENDOR BIDS APIs ====================
 
 class VendorBidRequest(BaseModel):
     project_id: str
-    vendors: List[dict]  # List of vendor objects from random vendors API
+    vendors: List[dict]
 
 
-@router.post("/vendor-bids")
+@router.post("/vendor-bids/submit")
 def submit_vendor_bids(request: VendorBidRequest):
-    """
-    Submit selected vendors for a project
-    
-    Accepts JSON body:
-    {
-        "project_id": "PSB-PROC-2025-1-12-1",
-        "vendors": [
-            {
-                "vendor_name": "TCS Ltd",
-                "Technical Bid": 1,
-                "Commercial Bid": 1,
-                "EMD": 1,
-                "status": "Received"
-            },
-            {
-                "vendor_name": "Wipro Ltd",
-                "Technical Bid": 1,
-                "Commercial Bid": 0,
-                "EMD": 1,
-                "status": "Incomplete"
-            }
-        ]
-    }
-    
-    - Only vendors with status "Received" will be assigned commercial bid values
-    - Assigns random commercial bid value (15000000-95000000)
-    - Assigns random technical score (60-100)
-    - Ranks vendors based on commercial bid (lowest = rank 1)
-    """
+    """Submit vendor bids for a project"""
     db = SessionLocal()
     
     try:
-        # Find the project
         project = db.query(ProjectCredential).filter(
             ProjectCredential.id == request.project_id
         ).first()
@@ -522,6 +483,15 @@ def submit_vendor_evaluation(project_id: str):
         if not vendors:
             raise HTTPException(status_code=404, detail="No vendor bids found")
 
+        # Get publication date from PublishRFP table
+        publish_rfp = db.query(PublishRFP).filter(
+            PublishRFP.project_pk_id == project.pk_id
+        ).first()
+
+        publication_date = None
+        if publish_rfp and publish_rfp.publication_date:
+            publication_date = publish_rfp.publication_date.strftime("%Y-%m-%d")
+
         evaluated = []
 
         for vendor in vendors:
@@ -544,10 +514,11 @@ def submit_vendor_evaluation(project_id: str):
             VendorBid.project_pk_id == project.pk_id
         ).order_by(VendorBid.rank).all()
 
-        # ✅ WINNER (Rank 1)
+        # ✅ WINNER (Rank 1) - Now includes publication_date
         winner = {
             "vendor_name": final_bids[0].vendor_name,
-            "commercial_bid": final_bids[0].commercial_bid
+            "commercial_bid": final_bids[0].commercial_bid,
+            "publication_date": publication_date
         }
 
         return {

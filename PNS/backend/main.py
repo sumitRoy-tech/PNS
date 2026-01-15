@@ -7,6 +7,7 @@ from tender_drafting import router as tender_router
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from publish_rfp import router as publish_router
+from purchase import router as purchase_router
 
 
 app = FastAPI(title="RFP Creation Project")
@@ -28,6 +29,7 @@ app.include_router(functional_router)
 app.include_router(technical_review_router)
 app.include_router(tender_router)
 app.include_router(publish_router)
+app.include_router(purchase_router)
 
 
 

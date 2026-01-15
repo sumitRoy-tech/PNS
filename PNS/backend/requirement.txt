@@ -7,3 +7,11 @@ sentence-transformers
 PyPDF2
 python-docx
 openpyxl
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+anthropic
+python-dotenv
+reportlab
+pydantic

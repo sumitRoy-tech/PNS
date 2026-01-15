@@ -5,3 +5,4 @@ faiss.index
 __pycache__/
 /generated_rfps
 /generated_purchase_orders
+/generated_agreements

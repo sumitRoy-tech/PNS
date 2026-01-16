@@ -720,202 +720,140 @@ def generate_agreement_content_from_project_data(
     
     prompts = {
  
-        "MSA": f"""You are a legal document expert for Punjab & Sind Bank. 
-        CRITICAL LENGTH CONSTRAINT (MANDATORY):
-            - The final document MUST NOT exceed 3 A4 pages when rendered as a professional PDF.
-            - Target length: 1,200–1,400 words TOTAL.
-            - Be concise. Summarize clauses. Avoid repetition.
-            - Use short paragraphs and bullet-like sentence structure.
-            - If content exceeds the limit, PRIORITIZE legally essential clauses and OMIT minor details.
-        
-        Generate a concise but legally complete MASTER SERVICE AGREEMENT (MSA) using ALL the project data provided below.
+"MSA": f"""You are a legal document expert for Punjab & Sind Bank.
+
+LENGTH REQUIREMENT:
+- Maximum 3 A4 pages (approx. 1,200–1,400 words).
+- Be concise and avoid repetition.
+- Prioritize essential legal clauses only.
+
+Generate a clear, legally complete MASTER SERVICE AGREEMENT (MSA) using the project data below.
 
 {comprehensive_context}
 
-Using ALL the above data from all tables, create a formal and legally binding MSA document that includes:
+The MSA must include the following sections (keep each section concise):
 
 1. PREAMBLE
-   - Parties: Punjab & Sind Bank (the "Bank") and {vendor_name} (the "Service Provider")
+   - Parties: Punjab & Sind Bank and {vendor_name}
    - Effective Date: {datetime.now().strftime('%d-%m-%Y')}
    - Contract Value: ₹{po_value:,.2f}
 
 2. DEFINITIONS AND INTERPRETATION
-   - Define all key terms based on the project scope and technical specifications
-   - Include banking-specific terminology
 
 3. SCOPE OF SERVICES
-   - Based on project title: {project.title}
+   - Project: {project.title}
    - Department: {project.department}
    - Category: {project.category}
-   - Include all technical specifications from the RFP
-   - Reference the functional assessment requirements
 
 4. TERM AND TERMINATION
    - Delivery Period: {delivery_period}
-   - Contract renewal terms
-   - Termination conditions based on tender draft
-   - Exit management provisions
 
 5. SERVICE FEES AND PAYMENT
-   - Total Contract Value: ₹{po_value:,.2f}
-   - Payment Terms: {payment_terms}
-   - Invoice procedures
-   - EMD details from tender draft
+   - Contract Value and Payment Terms: {payment_terms}
 
 6. INTELLECTUAL PROPERTY RIGHTS
-   - Ownership of deliverables
-   - License grants
-   - Third-party IP considerations
 
 7. CONFIDENTIALITY
-   - Banking data protection requirements
-   - Customer information security
-   - RBI compliance from technical review
 
 8. DATA PROTECTION AND SECURITY
-   - Security measures from technical review
-   - Data handling procedures
-   - RBI data localization compliance
+   - RBI and banking compliance
 
 9. WARRANTIES AND REPRESENTATIONS
-   - Based on eligibility criteria from tender draft
-   - Technical warranties from RFP requirements
-   - Performance guarantees
 
 10. LIMITATION OF LIABILITY
-    - Caps on liability
-    - Exclusions
-    - Insurance requirements
 
 11. INDEMNIFICATION
-    - Mutual indemnification clauses
-    - IP indemnification
 
 12. FORCE MAJEURE
-    - Definition and procedures
-    - Notification requirements
 
 13. DISPUTE RESOLUTION
-    - Escalation matrix
-    - Arbitration in New Delhi
-    - Governing jurisdiction
+   - Arbitration in New Delhi
 
 14. GOVERNING LAW
-    - Indian law
-    - RBI regulations compliance
+   - Indian law and RBI regulations
 
 15. GENERAL PROVISIONS
-    - Notices
-    - Amendment procedures
-    - Entire agreement clause
-    - Severability
 
 16. SIGNATURES
-    - For Punjab & Sind Bank
-    - For {vendor_name}
+   - For Punjab & Sind Bank
+   - For {vendor_name}
 
-Format professionally with numbered clauses and sub-clauses. Reference specific data from all tables wherever applicable. Use plain text without markdown formatting.""",
+Use plain text only (no markdown). Keep the document professional, structured, and within the page limit.""",
 
-        "SLA": f"""You are a service level management expert for Punjab & Sind Bank.
-        CRITICAL LENGTH CONSTRAINT (MANDATORY):
-            - The final document MUST NOT exceed 3 A4 pages when rendered as a professional PDF.
-            - Target length: 1,200–1,400 words TOTAL.
-            - Be concise. Summarize clauses. Avoid repetition.
-            - Use short paragraphs and bullet-like sentence structure.
-            - If content exceeds the limit, PRIORITIZE legally essential clauses and OMIT minor details.
-        
-        Generate a concise but legally complete SERVICE LEVEL AGREEMENT (SLA) using ALL the project data provided below.
+ "SLA": f"""You are a service level management expert for Punjab & Sind Bank.
+
+LENGTH REQUIREMENT:
+- Maximum 3 A4 pages (approx. 1,200–1,400 words).
+- Keep clauses concise and non-repetitive.
+- Focus on enforceable service metrics and penalties.
+
+Generate a clear and legally enforceable SERVICE LEVEL AGREEMENT (SLA) using the project data below.
 
 {comprehensive_context}
 
-Using ALL the above data from all tables, create a formal SLA document that includes:
+The SLA must include the following sections (keep each section brief and precise):
 
 1. SERVICE DESCRIPTION
    - Project: {project.title}
    - Department: {project.department}
-   - Scope based on RFP content and functional assessment
+   - Scope based on RFP and functional assessment
 
 2. SERVICE AVAILABILITY
-   - 99.9% uptime guarantee
-   - Planned maintenance windows
-   - Availability calculation method
+   - 99.9% uptime commitment
+   - Planned and emergency maintenance rules
 
 3. PERFORMANCE METRICS
-   - Response time KPIs based on technical specifications
-   - Transaction processing times
-   - System performance benchmarks from technical review
+   - Response and resolution KPIs
+   - System performance benchmarks
 
 4. RESPONSE TIME REQUIREMENTS
-   - Priority 1 (Critical): Response within 15 minutes, Resolution within 4 hours
-   - Priority 2 (High): Response within 30 minutes, Resolution within 8 hours
-   - Priority 3 (Medium): Response within 2 hours, Resolution within 24 hours
-   - Priority 4 (Low): Response within 4 hours, Resolution within 48 hours
+   - Priority-based response and resolution timelines
 
 5. INCIDENT MANAGEMENT
-   - Incident classification based on technical review
-   - Reporting procedures
-   - Root cause analysis requirements
+   - Incident classification
+   - Reporting and RCA procedures
 
 6. ESCALATION PROCEDURES
-   - Escalation matrix with timelines
-   - Contact points
-   - Management escalation
+   - Escalation levels and timelines
 
 7. MAINTENANCE WINDOWS
-   - Scheduled maintenance timing
-   - Emergency maintenance procedures
-   - Notification requirements (minimum 72 hours advance notice)
+   - Scheduled maintenance
+   - Advance notification requirements
 
-8. SERVICE CREDITS
-   - Credit calculation formula
-   - Based on penalty clause: {penalty_clause}
-   - Maximum credits per month
+8. SERVICE CREDITS AND PENALTIES
+   - Penalty clause: {penalty_clause}
+   - Monthly credit limits
 
-9. REPORTING REQUIREMENTS
-   - Daily, weekly, monthly reports
-   - Dashboard requirements
-   - Performance review meetings
+9. REPORTING AND REVIEW
+   - Operational reports
+   - Quarterly SLA reviews
 
-10. REVIEW AND MONITORING
-    - Quarterly SLA reviews
-    - Performance assessment criteria
-    - Continuous improvement process
-
-11. PENALTY CALCULATIONS
-    - Specific penalties: {penalty_clause}
-    - Calculation examples
-    - Payment/credit process
-
-12. EXCLUSIONS
+10. EXCLUSIONS
     - Force majeure
-    - Planned maintenance
-    - Bank-caused issues
-    - Third-party dependencies
+    - Bank-caused or third-party issues
 
-13. SERVICE HOURS
+11. SERVICE HOURS
     - 24x7 for critical systems
     - Business hours definition
-    - Holiday support
 
-14. SIGNATURES
+12. SIGNATURES
     - For Punjab & Sind Bank
     - For {vendor_name}
 
-Include specific metrics, timelines, and penalty calculations. Use plain text without markdown formatting.""",
+Use plain text only (no markdown). Keep the document professional, structured, and within the page limit.""",
 
-        "NDA": f"""You are a legal expert specializing in confidentiality agreements for banking sector.
-        CRITICAL LENGTH CONSTRAINT (MANDATORY):
-            - The final document MUST NOT exceed 3 A4 pages when rendered as a professional PDF.
-            - Target length: 1,200–1,400 words TOTAL.
-            - Be concise. Summarize clauses. Avoid repetition.
-            - Use short paragraphs and bullet-like sentence structure.
-            - If content exceeds the limit, PRIORITIZE legally essential clauses and OMIT minor details.
-        
-        Generate a concise but legally complete NON-DISCLOSURE AGREEMENT (NDA) for Punjab & Sind Bank using ALL the project data provided below.
+"NDA": f"""You are a legal expert specializing in confidentiality agreements for the banking sector.
+
+LENGTH REQUIREMENT:
+- Maximum 3 A4 pages (approx. 1,200–1,400 words).
+- Keep language precise and non-repetitive.
+- Focus on enforceable confidentiality and RBI requirements.
+
+Generate a clear and legally binding NON-DISCLOSURE AGREEMENT (NDA) for Punjab & Sind Bank using the project data below.
 
 {comprehensive_context}
 
-Using ALL the above data from all tables, create a formal NDA document that includes:
+The NDA must include the following sections (keep each section concise):
 
 1. PREAMBLE
    - Parties: Punjab & Sind Bank (Disclosing Party) and {vendor_name} (Receiving Party)
@@ -923,96 +861,59 @@ Using ALL the above data from all tables, create a formal NDA document that incl
    - Effective Date: {datetime.now().strftime('%d-%m-%Y')}
 
 2. DEFINITIONS
-   - Confidential Information
-   - Banking Data
-   - Customer Information
-   - RBI Regulated Information
-   - Technical Information (based on technical review)
-   - Business Information
+   - Confidential Information, Banking Data, Customer Information, RBI-Regulated Information
 
-3. CONFIDENTIAL INFORMATION SCOPE
-   - Project-specific information: {project.title}
-   - Technical specifications from RFP
-   - Customer data and banking records
-   - Security architecture from technical review
-   - Financial information
-   - Business processes
+3. SCOPE OF CONFIDENTIAL INFORMATION
+   - Project and RFP-related information
+   - Customer, financial, and security data
 
 4. OBLIGATIONS OF RECEIVING PARTY
-   - Non-disclosure obligations
-   - Use restrictions (only for project: {project.title})
-   - Protection standards (encryption, access control)
-   - Employee confidentiality binding
-   - Subcontractor restrictions
+   - Non-disclosure and limited use
+   - Security safeguards and employee binding
 
-5. EXCLUSIONS FROM CONFIDENTIALITY
-   - Publicly available information
-   - Prior knowledge
-   - Independent development
-   - Required disclosures (RBI, regulatory, legal)
+5. EXCLUSIONS
+   - Public domain, prior knowledge, legal/regulatory disclosures
 
 6. TERM OF CONFIDENTIALITY
-   - General information: 5 years post-termination
-   - Customer data: Perpetual
-   - RBI regulated information: Perpetual
-   - Security information: Perpetual
+   - General information (limited term)
+   - Customer and RBI-regulated data (perpetual)
 
-7. RETURN OF CONFIDENTIAL INFORMATION
-   - Return procedures upon project completion
-   - Destruction certification requirements
-   - Retention for legal/regulatory requirements
+7. RETURN OR DESTRUCTION OF INFORMATION
+   - Post-project handling and certification
 
-8. NO LICENSE GRANTED
-   - No IP rights transfer
-   - No implied licenses
-   - Bank's ownership of all data
+8. NO LICENSE OR OWNERSHIP TRANSFER
 
-9. NO WARRANTY
-   - Disclaimer of warranties
-   - Accuracy disclaimer
-   - No guarantee of business relationship
+9. DISCLAIMERS AND LIMITATION OF WARRANTY
 
 10. REMEDIES
-    - Injunctive relief
-    - Monetary damages
-    - Specific performance
-    - Legal costs recovery
+    - Injunctive relief and damages
 
-11. RBI COMPLIANCE
-    - Data localization requirements
-    - Regulatory reporting obligations
-    - Audit requirements from technical review
+11. RBI AND REGULATORY COMPLIANCE
+    - Data localization and audit rights
 
-12. GOVERNING LAW
-    - Indian law
-    - Jurisdiction: Courts of New Delhi
-    - RBI regulations
+12. GOVERNING LAW AND JURISDICTION
+    - Indian law, Courts of New Delhi
 
-13. ENTIRE AGREEMENT
-    - Integration clause
-    - Amendment requirements (written only)
-    - No oral modifications
+13. ENTIRE AGREEMENT AND AMENDMENTS
 
 14. SIGNATURES
     - For Punjab & Sind Bank
     - For {vendor_name}
-    - Witness signatures
 
-Emphasize banking data protection and RBI compliance. Use plain text without markdown formatting.""",
+Use plain text only (no markdown). Keep the document professional, structured, and within the page limit.""",
 
-        "DPA": f"""You are a data protection expert for banking sector.
-        CRITICAL LENGTH CONSTRAINT (MANDATORY):
-            - The final document MUST NOT exceed 3 A4 pages when rendered as a professional PDF.
-            - Target length: 1,200–1,400 words TOTAL.
-            - Be concise. Summarize clauses. Avoid repetition.
-            - Use short paragraphs and bullet-like sentence structure.
-            - If content exceeds the limit, PRIORITIZE legally essential clauses and OMIT minor details.
-        
-        Generate a concise but legally complete DATA PROCESSING AGREEMENT (DPA) for Punjab & Sind Bank using ALL the project data provided below.
+"DPA": f"""You are a data protection expert for the banking sector.
+
+LENGTH REQUIREMENT:
+- Maximum 3 A4 pages (approx. 1,200–1,400 words).
+- Keep language precise and non-repetitive.
+- Focus on RBI and DPDP Act compliance.
+
+Generate a clear and legally enforceable DATA PROCESSING AGREEMENT (DPA) for Punjab & Sind Bank using the project data below.
 
 {comprehensive_context}
 
-Using ALL the above data from all tables, create a formal DPA document compliant with Indian data protection laws and RBI guidelines:
+The DPA must include the following sections (keep each section concise):
 
 1. PREAMBLE
    - Data Controller: Punjab & Sind Bank
@@ -1022,356 +923,120 @@ Using ALL the above data from all tables, create a formal DPA document compliant
    - Effective Date: {datetime.now().strftime('%d-%m-%Y')}
 
 2. DEFINITIONS
-   - Personal Data
-   - Sensitive Personal Data (banking, financial)
-   - Data Processing
-   - Data Controller (Punjab & Sind Bank)
-   - Data Processor ({vendor_name})
-   - Sub-processor
-   - Data Subject (bank customers)
-   - Data Breach
-   - RBI Regulated Data
+   - Personal Data, Sensitive Personal Data, RBI-Regulated Data
 
 3. SCOPE AND PURPOSE OF PROCESSING
-   - Project scope: {project.title}
-   - Department: {project.department}
-   - Processing activities based on RFP
-   - Lawful basis for processing
+   - Project scope and lawful basis
 
-4. DATA CONTROLLER AND PROCESSOR ROLES
-   - Bank as Data Controller responsibilities
-   - {vendor_name} as Data Processor obligations
-   - Clear demarcation of duties
+4. ROLES AND RESPONSIBILITIES
+   - Bank (Controller) and {vendor_name} (Processor)
 
 5. TYPES OF PERSONAL DATA
-   - Customer information
-   - Transaction data
-   - Account details
-   - KYC information
-   - Financial records
-   - Categories based on project: {project.category}
+   - Customer, financial, KYC, and transaction data
 
 6. PROCESSING INSTRUCTIONS
-   - Written instructions requirement
-   - Scope limitations based on contract
-   - Purpose limitations
-   - No processing beyond instructions
+   - Written instructions and purpose limitation
 
 7. SECURITY MEASURES
-   - Technical measures from technical review
-   - Encryption standards
-   - Access controls
-   - Network security
-   - Physical security
-   - ISO 27001 compliance requirement
+   - Technical and organizational controls
+   - Alignment with technical review and ISO 27001
 
 8. SUB-PROCESSORS
-   - Prior written consent requirement
-   - List of approved sub-processors
-   - Sub-processor agreement requirements
-   - Flow-down of obligations
-   - Bank's right to object
+   - Prior approval and flow-down obligations
 
 9. DATA SUBJECT RIGHTS
-   - Access requests handling
-   - Rectification requests
-   - Deletion/erasure requests
-   - Portability requests
-   - Objection handling
-   - Response timelines
+   - Access, correction, deletion, and response timelines
 
-10. DATA BREACH NOTIFICATION
-    - 72-hour notification to Bank
-    - Notification contents required
-    - RBI notification (6 hours for critical)
-    - Remediation procedures
-    - Post-incident review
+10. DATA BREACH MANAGEMENT
+    - Bank notification timelines
+    - RBI reporting obligations
 
-11. DATA TRANSFER
-    - Data localization (all data in India) - RBI mandate
-    - Cross-border transfer prohibition
-    - Exception handling
-    - Transfer impact assessment
+11. DATA TRANSFER AND LOCALIZATION
+    - India-only storage and processing
 
-12. AUDIT RIGHTS
-    - Bank's audit rights (annual minimum)
-    - RBI audit compliance
-    - Third-party audit reports (SOC 2)
-    - On-site inspection rights
-    - 30-day notice for audits
+12. AUDIT AND INSPECTION RIGHTS
+    - Bank and RBI audit access
 
-13. DELETION AND RETURN OF DATA
-    - Procedures upon termination
-    - Retention periods as per RBI
-    - Secure destruction methods
-    - Destruction certification
-    - Archive requirements
+13. DATA DELETION AND RETURN
+    - Termination handling and certification
 
-14. RBI COMPLIANCE REQUIREMENTS
-    - Data localization (all data stored in India)
-    - Outsourcing guidelines compliance
-    - IT outsourcing circular requirements
-    - Reporting to RBI
-    - Inspection facilitation
+14. REGULATORY COMPLIANCE
+    - RBI outsourcing guidelines
+    - DPDP Act requirements
 
-15. DPDP ACT COMPLIANCE
-    - Digital Personal Data Protection Act requirements
-    - Consent management
-    - Data principal rights
-    - Grievance redressal
+15. LIABILITY AND INDEMNIFICATION
+    - Liability caps linked to contract value: ₹{po_value:,.2f}
 
-16. LIABILITY AND INDEMNIFICATION
-    - Processor liability for breaches
-    - Indemnification for non-compliance
-    - Caps based on contract value: ₹{po_value:,.2f}
-    - Insurance requirements
+16. GOVERNING LAW
+    - Indian law and jurisdiction
 
 17. SIGNATURES
-    - For Punjab & Sind Bank (Data Controller)
-    - For {vendor_name} (Data Processor)
+    - For Punjab & Sind Bank
+    - For {vendor_name}
 
-Include RBI data localization and DPDP Act compliance throughout. Use plain text without markdown formatting.""",
+Use plain text only (no markdown). Keep the document professional, structured, and within the page limit.""",
 
-        "ANNEXURES": f"""You are a contract documentation expert.
-        CRITICAL LENGTH CONSTRAINT (MANDATORY):
-            - The final document MUST NOT exceed 3 A4 pages when rendered as a professional PDF.
-            - Target length: 1,200–1,400 words TOTAL.
-            - Be concise. Summarize clauses. Avoid repetition.
-            - Use short paragraphs and bullet-like sentence structure.
-            - If content exceeds the limit, PRIORITIZE legally essential clauses and OMIT minor details.
-        
-        Generate a concise but legally complete ANNEXURES AND SCHEDULES for Punjab & Sind Bank service agreement using ALL the project data provided below.
+"ANNEXURES": f"""You are a contract documentation expert for the banking sector.
+
+LENGTH REQUIREMENT:
+- Maximum 3 A4 pages.
+- Keep schedules concise and summary-driven.
+- Avoid repeating clauses already covered in the MSA or SLA.
+
+Generate concise ANNEXURES AND SCHEDULES for the Punjab & Sind Bank service agreement using the project data below.
 
 {comprehensive_context}
 
-Using ALL the above data from all tables, create detailed annexures:
+Include ONLY the following essential schedules (each in summary form):
 
-SCHEDULE A - SCOPE OF WORK
-===========================
-Project: {project.title}
-Department: {project.department}
-Category: {project.category}
+SCHEDULE A – SCOPE OF WORK
+- Project: {project.title}
+- Department: {project.department}
+- Category: {project.category}
+- Key deliverables (high-level)
+- Implementation timeline: {delivery_period}
+- Assumptions and dependencies (Bank vs Vendor)
 
-1. DETAILED DELIVERABLES
-   - Based on RFP content and technical specifications
-   - Milestone-wise deliverables
-   - Quality standards
+SCHEDULE B – PRICING AND PAYMENT
+- Total Contract Value: ₹{po_value:,.2f}
+- Payment Terms: {payment_terms}
+- Milestone-based payments (summary)
+- Invoicing requirements
+- EMD / Performance Guarantee (summary)
 
-2. TECHNICAL SPECIFICATIONS
-   - From technical review and RFP
-   - System architecture requirements
-   - Integration specifications
-   - Security requirements
+SCHEDULE C – PROJECT GOVERNANCE
+- Bank and Vendor key roles (high-level)
+- Governance structure
+- Escalation paths
 
-3. IMPLEMENTATION TIMELINE
-   - Delivery Period: {delivery_period}
-   - Phase-wise breakdown
-   - Key milestones with dates
-   - Dependencies
+SCHEDULE D – TECHNICAL AND SECURITY REQUIREMENTS
+- Architecture and integration overview
+- Key security controls (from technical review)
+- Performance targets (availability, response time)
+- RBI and ISO 27001 compliance references
 
-4. ASSUMPTIONS AND DEPENDENCIES
-   - Bank responsibilities
-   - Vendor dependencies
-   - Third-party requirements
+SCHEDULE E – ACCEPTANCE AND CHANGE MANAGEMENT
+- Acceptance criteria (functional, performance, security)
+- Change request process (summary)
+- Approval authority
 
-SCHEDULE B - PRICING AND PAYMENT
-================================
-1. PRICE BREAKDOWN
-   - Total Contract Value: ₹{po_value:,.2f}
-   - Component-wise pricing
-   - Tax details (GST applicable)
-   - Currency: Indian Rupees
+SCHEDULE F – EXIT MANAGEMENT
+- Transition period and knowledge transfer
+- Data and asset handover
+- Post-exit support duration
 
-2. PAYMENT MILESTONES
-   - Payment Terms: {payment_terms}
-   - Milestone-wise payments
-   - Payment schedule with dates
-   - Hold-back provisions
+SCHEDULE G – SLA AND PENALTY SUMMARY
+- Key service levels
+- Penalty clause: {penalty_clause}
+- Service credit caps (summary)
 
-3. INVOICE FORMAT
-   - Required invoice details
-   - Supporting documents
-   - Submission process
-   - Payment timeline (within 30 days)
+SCHEDULE H – COMPLIANCE AND AUDIT
+- RBI compliance obligations
+- Audit rights and frequency
+- Mandatory certifications
 
-4. EMD AND PERFORMANCE GUARANTEE
-   - EMD details from tender draft
-   - Performance Bank Guarantee requirements
-   - Validity period
-   - Return conditions
+Use plain text only (no markdown). Keep all schedules concise, non-repetitive, and within the page limit."""
 
-SCHEDULE C - PROJECT TEAM AND GOVERNANCE
-========================================
-1. BANK PROJECT TEAM
-   - Project Sponsor
-   - Project Manager
-   - Technical Lead
-   - Business Analyst
-   - Contact: {project.email or 'As per project'}
-
-2. VENDOR PROJECT TEAM
-   - Account Manager
-   - Project Manager
-   - Technical Architect
-   - Development Lead
-   - QA Lead
-   - Support Manager
-
-3. GOVERNANCE STRUCTURE
-   - Steering Committee
-   - Project Management Committee
-   - Technical Committee
-   - Meeting frequency
-
-4. RACI MATRIX
-   - Roles and responsibilities
-   - Decision-making authority
-   - Escalation paths
-
-SCHEDULE D - TECHNICAL REQUIREMENTS
-===================================
-Based on Technical Committee Review:
-
-1. SYSTEM REQUIREMENTS
-   - Hardware specifications
-   - Software requirements
-   - Operating system
-   - Database requirements
-
-2. INTEGRATION SPECIFICATIONS
-   - API requirements
-   - Data exchange formats
-   - Integration points with bank systems
-   - Middleware requirements
-
-3. SECURITY REQUIREMENTS
-   - Based on security assessment
-   - Encryption standards (AES-256)
-   - Access control (RBAC)
-   - Audit logging
-   - Vulnerability management
-
-4. PERFORMANCE REQUIREMENTS
-   - Response time: <2 seconds
-   - Throughput requirements
-   - Concurrent user support
-   - Availability: 99.9%
-
-5. COMPLIANCE REQUIREMENTS
-   - RBI compliance from technical review
-   - ISO 27001
-   - PCI-DSS if applicable
-
-SCHEDULE E - ACCEPTANCE CRITERIA
-================================
-1. TESTING PROCEDURES
-   - Unit testing requirements
-   - Integration testing
-   - System testing
-   - UAT requirements
-   - Performance testing
-   - Security testing
-
-2. ACCEPTANCE CRITERIA
-   - Functional acceptance
-   - Performance acceptance
-   - Security acceptance
-   - Documentation acceptance
-
-3. SIGN-OFF PROCESS
-   - Sign-off authorities
-   - Sign-off timelines
-   - Defect classification
-   - Critical defect: 0 open
-   - Major defect: <5 open
-   - Conditional acceptance
-
-SCHEDULE F - CHANGE MANAGEMENT
-==============================
-1. CHANGE REQUEST PROCESS
-   - Change request form
-   - Submission procedure
-   - Impact assessment
-   - Approval workflow
-
-2. CHANGE CATEGORIES
-   - Minor changes (within scope)
-   - Major changes (scope change)
-   - Critical changes (contract amendment)
-
-3. APPROVAL AUTHORITY
-   - Minor: Project Manager
-   - Major: Steering Committee
-   - Critical: Competent Authority
-
-4. COST AND TIMELINE IMPACT
-   - Cost calculation method
-   - Timeline extension process
-   - Documentation requirements
-
-SCHEDULE G - EXIT MANAGEMENT
-============================
-1. TRANSITION PLANNING
-   - 90-day transition period
-   - Knowledge transfer activities
-   - Documentation handover
-   - Training requirements
-
-2. DATA HANDOVER
-   - Data migration plan
-   - Data format specifications
-   - Verification procedures
-   - Certification of completeness
-
-3. ASSET TRANSFER
-   - Bank-owned assets
-   - License transfers
-   - Documentation
-   - Source code (if applicable)
-
-4. POST-EXIT SUPPORT
-   - 30-day support period
-   - Issue resolution
-   - Query handling
-
-SCHEDULE H - SLA AND PENALTY MATRIX
-===================================
-1. SERVICE LEVELS
-   - Availability: 99.9%
-   - Response times by priority
-   - Resolution times by priority
-
-2. PENALTY CLAUSE
-   - {penalty_clause}
-   - Calculation formula
-   - Monthly cap: 10% of monthly fee
-   - Annual cap: 20% of annual contract value
-
-3. SERVICE CREDIT CALCULATION
-   - Credit percentage per SLA breach
-   - Cumulative calculation
-   - Credit note process
-
-SCHEDULE I - COMPLIANCE AND AUDIT
-=================================
-1. REGULATORY COMPLIANCE
-   - RBI compliance requirements
-   - Data protection laws
-   - IT Act compliance
-   - Banking regulations
-
-2. AUDIT REQUIREMENTS
-   - Internal audit: Quarterly
-   - External audit: Annual
-   - RBI inspection: As required
-   - Audit report submission: Within 30 days
-
-3. CERTIFICATION REQUIREMENTS
-   - ISO 27001
-   - SOC 2 Type II
-   - Any other applicable
-
-Use plain text without markdown formatting. Include specific details from all project data wherever applicable."""
     }
     
     prompt = prompts.get(agreement_type, "")

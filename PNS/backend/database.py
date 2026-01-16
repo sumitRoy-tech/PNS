@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy import (
     create_engine, Column, String, Float, DateTime,
-    Integer, Text, ForeignKey, text
+    Integer, Text, ForeignKey, text, Boolean
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -88,11 +88,12 @@ class ProjectCredential(Base):
     vendor_bids = relationship("VendorBid", back_populates="project")
     purchase_data = relationship("PurchaseData", back_populates="project")
     agreement_documents = relationship("AgreementDocument", back_populates="project")
+    progress = relationship("TrackProgress", back_populates="project", uselist=False)
 
 
 logger.info("Model defined: ProjectCredential (table: project_credentials)")
 logger.info("  - Columns: pk_id, id, title, department, category, priority, estimated_amount, business_justification, submitted_by, technical_specification, expected_timeline, email, phone_number, created_at")
-logger.info("  - Relationships: files, assessments, technical_reviews, generated_rfps, tender_drafts, publish_rfps, vendor_bids, purchase_data, agreement_documents")
+logger.info("  - Relationships: files, assessments, technical_reviews, generated_rfps, tender_drafts, publish_rfps, vendor_bids, purchase_data, agreement_documents, progress")
 
 
 class UploadedFile(Base):
@@ -169,20 +170,19 @@ class GeneratedRFP(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, index=True)
     project_id = Column(String(50), nullable=False, index=True)
-    rfp_content = Column(Text, nullable=False)
-    rfp_filename = Column(String(255), nullable=False)
-    rfp_filepath = Column(String(500), nullable=False)
-    version = Column(Integer, default=1)
-    generated_by = Column(String(100), default="Claude AI")
+    version = Column(Integer, nullable=False, default=1)
+    rfp_content = Column(Text, nullable=True)
+    rfp_filename = Column(String(255), nullable=True)
+    rfp_filepath = Column(String(500), nullable=True)
     file_size_kb = Column(Float, nullable=True)
+    generated_by = Column(String(100), default="Claude AI")
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     project = relationship("ProjectCredential", back_populates="generated_rfps")
 
 
 logger.info("Model defined: GeneratedRFP (table: generated_rfps)")
-logger.info("  - Columns: id, project_pk_id, project_id, rfp_content, rfp_filename, rfp_filepath, version, generated_by, file_size_kb, created_at, updated_at")
+logger.info("  - Columns: id, project_pk_id, project_id, version, rfp_content, rfp_filename, rfp_filepath, file_size_kb, generated_by, created_at")
 logger.info("  - Foreign Key: project_pk_id -> project_credentials.pk_id")
 
 
@@ -319,6 +319,159 @@ logger.info("  - Columns: id, project_pk_id, project_id, purchase_order_number, 
 logger.info("  - Foreign Key: project_pk_id -> project_credentials.pk_id")
 logger.info("  - Agreement Types: MSA, SLA, NDA, DPA, ANNEXURES")
 
+
+# ==================== NEW TABLE: TRACK PROGRESS ====================
+
+class TrackProgress(Base):
+    """
+    Track the progress of each project through the procurement workflow.
+    Each project has one progress record tracking completion of all 10 pages/stages.
+    """
+    __tablename__ = "track_progress"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    project_pk_id = Column(Integer, ForeignKey("project_credentials.pk_id"), nullable=False, unique=True, index=True)
+    project_id = Column(String(50), nullable=False, unique=True, index=True)
+    
+    # Page completion status (Boolean for each page)
+    page_1_requirement = Column(Boolean, default=False)          # Requirement Submission
+    page_2_functional = Column(Boolean, default=False)           # Functional Assessment
+    page_3_technical = Column(Boolean, default=False)            # Technical Committee Review
+    page_4_rfp_generation = Column(Boolean, default=False)       # RFP Generation
+    page_5_tender_draft = Column(Boolean, default=False)         # Tender Drafting
+    page_6_authority_approval = Column(Boolean, default=False)   # Authority Approval
+    page_7_publish_rfp = Column(Boolean, default=False)          # RFP Publishing
+    page_8_vendor_bidding = Column(Boolean, default=False)       # Vendor Bidding
+    page_9_vendor_evaluation = Column(Boolean, default=False)    # Vendor Evaluation
+    page_10_purchase_order = Column(Boolean, default=False)      # Purchase Order
+    
+    # Completion timestamps for each page
+    page_1_completed_at = Column(DateTime, nullable=True)
+    page_2_completed_at = Column(DateTime, nullable=True)
+    page_3_completed_at = Column(DateTime, nullable=True)
+    page_4_completed_at = Column(DateTime, nullable=True)
+    page_5_completed_at = Column(DateTime, nullable=True)
+    page_6_completed_at = Column(DateTime, nullable=True)
+    page_7_completed_at = Column(DateTime, nullable=True)
+    page_8_completed_at = Column(DateTime, nullable=True)
+    page_9_completed_at = Column(DateTime, nullable=True)
+    page_10_completed_at = Column(DateTime, nullable=True)
+    
+    # Current active page (1-10)
+    current_page = Column(Integer, default=1)
+    
+    # Overall progress percentage (0-100)
+    overall_progress = Column(Float, default=0.0)
+    
+    # Status: 'in_progress', 'completed', 'on_hold', 'rejected'
+    status = Column(String(50), default="in_progress")
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    project = relationship("ProjectCredential", back_populates="progress")
+
+
+logger.info("Model defined: TrackProgress (table: track_progress)")
+logger.info("  - Columns: id, project_pk_id, project_id")
+logger.info("  - Page tracking: page_1 through page_10 (Boolean)")
+logger.info("  - Completion timestamps: page_1_completed_at through page_10_completed_at")
+logger.info("  - Progress tracking: current_page, overall_progress, status")
+logger.info("  - Timestamps: created_at, updated_at")
+logger.info("  - Foreign Key: project_pk_id -> project_credentials.pk_id (unique)")
+
+
+# ==================== NEW TABLE: REJECTED PROJECTS ====================
+
+class RejectedProject(Base):
+    """
+    Track rejected project IDs.
+    Simple table to store project_ids that were rejected at ApprovalGate.
+    """
+    __tablename__ = "rejected_projects"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    project_id = Column(String(50), nullable=False, unique=True, index=True)
+    rejected_at = Column(DateTime, default=datetime.utcnow)
+
+
+logger.info("Model defined: RejectedProject (table: rejected_projects)")
+logger.info("  - Columns: id, project_id, rejected_at")
+
+
+# ==================== NEW TABLE: PROJECT NAVIGATION ====================
+
+class ProjectNavigation(Base):
+    """
+    Track the current navigation state for each project.
+    Stores the current stage (case number) and component name for easy navigation.
+    """
+    __tablename__ = "project_navigation"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    project_id = Column(String(50), nullable=False, unique=True, index=True)
+    
+    # Current stage in App.js switch case (0-9)
+    current_stage = Column(Integer, default=0)
+    
+    # Component name (e.g., "RequirementForm", "FunctionalAnalysis", etc.)
+    current_page_component = Column(String(100), nullable=False)
+    
+    # Human-readable page name
+    current_page_name = Column(String(100), nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+logger.info("Model defined: ProjectNavigation (table: project_navigation)")
+logger.info("  - Columns: id, project_id, current_stage, current_page_component, current_page_name, created_at, updated_at")
+
+
+# ==================== STAGE TO COMPONENT MAPPING ====================
+# This maps App.js case numbers to component names
+STAGE_COMPONENT_MAP = {
+    0: {"component": "RequirementForm", "name": "Requirement Submission"},
+    1: {"component": "FunctionalAnalysis", "name": "Functional Analysis"},
+    2: {"component": "TechnicalReview", "name": "Technical Review"},
+    3: {"component": "TenderDrafting", "name": "Tender Drafting"},
+    4: {"component": "ApprovalGate", "name": "Authority Approval"},
+    5: {"component": "PublishRFP", "name": "Publish RFP"},
+    6: {"component": "ReceiveBids", "name": "Receive Bids"},
+    7: {"component": "VendorEvaluation", "name": "Vendor Evaluation"},
+    8: {"component": "PurchaseOrder", "name": "Purchase Order"},
+    9: {"component": "ContractSigning", "name": "Contract Signing"},
+}
+
+# Reverse mapping: Component name to stage number
+COMPONENT_STAGE_MAP = {v["component"]: k for k, v in STAGE_COMPONENT_MAP.items()}
+
+logger.info("Stage-Component mapping defined:")
+for stage, info in STAGE_COMPONENT_MAP.items():
+    logger.info(f"  - Case {stage}: {info['component']} ({info['name']})")
+
+
+# ==================== WORKFLOW PAGE DEFINITIONS ====================
+WORKFLOW_PAGES = {
+    1: {"name": "requirement", "label": "Requirement Submission", "field": "page_1_requirement"},
+    2: {"name": "functional", "label": "Functional Assessment", "field": "page_2_functional"},
+    3: {"name": "technical", "label": "Technical Review", "field": "page_3_technical"},
+    4: {"name": "rfp_generation", "label": "RFP Generation", "field": "page_4_rfp_generation"},
+    5: {"name": "tender_draft", "label": "Tender Drafting", "field": "page_5_tender_draft"},
+    6: {"name": "authority_approval", "label": "Authority Approval", "field": "page_6_authority_approval"},
+    7: {"name": "publish_rfp", "label": "RFP Publishing", "field": "page_7_publish_rfp"},
+    8: {"name": "vendor_bidding", "label": "Vendor Bidding", "field": "page_8_vendor_bidding"},
+    9: {"name": "vendor_evaluation", "label": "Vendor Evaluation", "field": "page_9_vendor_evaluation"},
+    10: {"name": "purchase_order", "label": "Purchase Order", "field": "page_10_purchase_order"}
+}
+
+logger.info("Workflow pages defined:")
+for num, info in WORKFLOW_PAGES.items():
+    logger.info(f"  - Page {num}: {info['label']} ({info['name']})")
+
+
 logger.info("-" * 60)
 logger.info("ALL DATABASE MODELS DEFINED SUCCESSFULLY")
 logger.info("-" * 60)
@@ -342,6 +495,9 @@ def init_db():
     logger.info("  8. vendor_bids")
     logger.info("  9. purchase_data")
     logger.info("  10. agreement_documents")
+    logger.info("  11. track_progress")
+    logger.info("  12. rejected_projects")
+    logger.info("  13. project_navigation")
     
     Base.metadata.create_all(bind=engine)
     
@@ -353,5 +509,5 @@ def init_db():
 
 logger.info("=" * 60)
 logger.info("DATABASE MODULE LOADED SUCCESSFULLY")
-logger.info("Total Models: 10")
+logger.info("Total Models: 13")
 logger.info("=" * 60)

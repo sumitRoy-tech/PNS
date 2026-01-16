@@ -475,13 +475,13 @@ def generate_rfp(request: GenerateRFPRequest):
         
         # ==================== 2. BUILD CONTEXT FOR CLAUDE ====================
         
-        # Compile all extracted text from files
+        # Compile all extracted text from files (limited)
         documents_text = ""
         if files:
             for f in files:
                 if f.text_extracted:
                     documents_text += f"\n\n--- Document: {f.original_filename} ---\n"
-                    documents_text += f.text_extracted[:5000]  # Limit per document
+                    documents_text += f.text_extracted[:2500]
         
         # Build comprehensive context
         context = f"""
@@ -491,7 +491,7 @@ PROJECT INFORMATION:
 - Department: {project.department}
 - Category: {project.category}
 - Priority: {project.priority}
-- Estimated Amount: {project.estimated_amount}
+- Estimated Amount: ₹{project.estimated_amount} Crore
 - Business Justification: {project.business_justification}
 - Submitted By: {project.submitted_by}
 - Technical Specification: {project.technical_specification or 'Not provided'}
@@ -520,40 +520,107 @@ TECHNICAL COMMITTEE REVIEW:
         if documents_text:
             context += f"""
 EXTRACTED DOCUMENT CONTENT:
-{documents_text[:15000]}
+{documents_text[:6000]}
 """
         
         # ==================== 3. CALL CLAUDE API ====================
         
-        prompt = f"""You are an expert RFP (Request for Proposal) writer. Based on the following project information, create a comprehensive and professional RFP document.
+        prompt = f"""You are an expert RFP (Request for Proposal) writer for Punjab & Sind Bank. Based on the following project information, create a professional and comprehensive RFP document.
 
 {context}
 
-Create a complete RFP document with the following sections:
-1. EXECUTIVE SUMMARY
-2. INTRODUCTION AND BACKGROUND
-3. SCOPE OF WORK
-4. TECHNICAL REQUIREMENTS
-5. FUNCTIONAL REQUIREMENTS
-6. COMPLIANCE AND REGULATORY REQUIREMENTS
-7. VENDOR QUALIFICATIONS
-8. EVALUATION CRITERIA
-9. TIMELINE AND MILESTONES
-10. BUDGET AND PRICING STRUCTURE
-11. TERMS AND CONDITIONS
-12. SUBMISSION REQUIREMENTS
-13. CONTACT INFORMATION
+IMPORTANT INSTRUCTIONS:
+1. Document must be EXACTLY 8-9 pages when printed
+2. Use professional banking/financial sector language
+3. Include specific details from the provided context
+4. Use INR (₹) for all currency values
+5. Reference Punjab & Sind Bank as the issuing authority
+6. Include RBI compliance requirements where applicable
+7. Do NOT use markdown formatting (no #, *, _, etc.) - write in plain text only
 
-Write in a professional, formal tone. Be specific and detailed based on the provided information.
-Do NOT use markdown formatting (no #, *, _, etc.). Write in plain text only.
-Each section should be clearly labeled with the section number and title.
+Create the RFP with these sections:
+
+1. EXECUTIVE SUMMARY
+   - Brief project overview (1 paragraph)
+   - Strategic objectives
+   - Key success factors (bullet points)
+   - Estimated project value
+
+2. ABOUT PUNJAB & SIND BANK
+   - Brief bank introduction
+   - Digital transformation initiatives
+   - Procurement objectives
+
+3. SCOPE OF WORK
+   - Primary deliverables
+   - Implementation services
+   - Integration requirements
+   - Support and maintenance expectations
+
+4. TECHNICAL REQUIREMENTS
+   - System architecture specifications
+   - Security requirements (as per RBI guidelines)
+   - Integration specifications
+   - Performance benchmarks
+   - Compliance standards
+
+5. FUNCTIONAL REQUIREMENTS
+   - Core functionality needed
+   - User interface requirements
+   - Reporting and analytics
+   - Data management
+
+6. VENDOR ELIGIBILITY CRITERIA
+   - Minimum experience requirements
+   - Financial stability criteria
+   - Technical certifications required
+   - Past performance requirements
+
+7. EVALUATION CRITERIA AND WEIGHTAGE
+   - Technical evaluation (with percentage)
+   - Commercial evaluation (with percentage)
+   - Scoring methodology
+   - Minimum qualifying scores
+
+8. COMMERCIAL TERMS
+   - Budget range
+   - Payment milestones
+   - Penalty clauses
+   - Warranty requirements
+
+9. SUBMISSION GUIDELINES
+   - Proposal format requirements
+   - Required documents checklist
+   - Submission deadline and process
+   - Bid security requirements
+
+10. IMPORTANT DATES AND TIMELINE
+    - RFP release date
+    - Pre-bid meeting
+    - Query submission deadline
+    - Proposal submission deadline
+    - Technical presentation dates
+    - Award announcement
+
+11. TERMS AND CONDITIONS
+    - Confidentiality requirements
+    - Intellectual property rights
+    - Termination clauses
+    - Dispute resolution
+
+12. CONTACT INFORMATION
+    - Procurement department details
+    - Technical queries contact
+    - Address for submission
+
+Write in a formal, professional tone suitable for a Public Sector Bank. Be specific with requirements based on the provided project details. Each section should flow naturally and contain relevant, actionable information for vendors.
 """
 
         client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
         
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=8000,
+            max_tokens=5000,
             messages=[{"role": "user", "content": prompt}]
         )
         
@@ -625,6 +692,7 @@ Each section should be clearly labeled with the section number and title.
     
     finally:
         db.close()
+
 
 
 # ==================== RFP DOWNLOAD APIs ====================

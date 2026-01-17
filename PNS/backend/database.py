@@ -343,7 +343,9 @@ class TrackProgress(Base):
     page_7_publish_rfp = Column(Boolean, default=False)          # RFP Publishing
     page_8_vendor_bidding = Column(Boolean, default=False)       # Vendor Bidding
     page_9_vendor_evaluation = Column(Boolean, default=False)    # Vendor Evaluation
-    page_10_purchase_order = Column(Boolean, default=False)      # Purchase Order
+    page_10_purchase_order = Column(Boolean, default=False) 
+    page_10_contract_signing = Column(Boolean, default=False)
+     # Purchase Order
     
     # Completion timestamps for each page
     page_1_completed_at = Column(DateTime, nullable=True)
@@ -356,6 +358,7 @@ class TrackProgress(Base):
     page_8_completed_at = Column(DateTime, nullable=True)
     page_9_completed_at = Column(DateTime, nullable=True)
     page_10_completed_at = Column(DateTime, nullable=True)
+    page_10_contract_signing_completed_at = Column(DateTime, nullable=True)
     
     # Current active page (1-10)
     current_page = Column(Integer, default=1)

@@ -102,7 +102,7 @@ PAGE_FIELD_MAPPING = {
     7: "page_8_vendor_bidding",     # ReceiveBids
     8: "page_9_vendor_evaluation",  # VendorEvaluation
     9: "page_10_purchase_order",    # PurchaseOrder
-    10: "page_10_contract_signing"  # ContractSigning (needs new column or reuse)
+    10: "page_10_contract_signing"  # ContractSigning (NEW - for 100% completion)
 }
 
 PAGE_NAME_MAPPING = {
@@ -238,6 +238,9 @@ def get_file_extension(filename: str) -> str:
 
 def calculate_overall_progress(progress: TrackProgress) -> float:
     """Calculate overall progress percentage based on completed pages"""
+    # Use getattr for page_10_contract_signing in case column doesn't exist yet
+    contract_signing = getattr(progress, 'page_10_contract_signing', False) or False
+    
     completed_count = sum([
         progress.page_1_requirement,
         progress.page_2_functional,
@@ -248,13 +251,17 @@ def calculate_overall_progress(progress: TrackProgress) -> float:
         progress.page_7_publish_rfp,
         progress.page_8_vendor_bidding,
         progress.page_9_vendor_evaluation,
-        progress.page_10_purchase_order
+        progress.page_10_purchase_order,
+        contract_signing  # New column for ContractSigning
     ])
-    return (completed_count / 10) * 100
+    return (completed_count / 11) * 100
 
 
 def get_current_page(progress: TrackProgress) -> int:
     """Determine the current active page based on completion status"""
+    # Use getattr for page_10_contract_signing in case column doesn't exist yet
+    contract_signing = getattr(progress, 'page_10_contract_signing', False) or False
+    
     pages = [
         progress.page_1_requirement,
         progress.page_2_functional,
@@ -265,7 +272,8 @@ def get_current_page(progress: TrackProgress) -> int:
         progress.page_7_publish_rfp,
         progress.page_8_vendor_bidding,
         progress.page_9_vendor_evaluation,
-        progress.page_10_purchase_order
+        progress.page_10_purchase_order,
+        contract_signing  # New column for ContractSigning
     ]
     
     # Find the first incomplete page
@@ -273,7 +281,7 @@ def get_current_page(progress: TrackProgress) -> int:
         if not completed:
             return i + 1
     
-    return 10  # All completed
+    return 11  # All completed
 
 
 # ==================== PROGRESS TRACKING APIs ====================
@@ -350,7 +358,7 @@ def update_progress(request: UpdateProgressRequest):
             7: "page_8_vendor_bidding",     # ReceiveBids
             8: "page_9_vendor_evaluation",  # VendorEvaluation
             9: "page_10_purchase_order",    # PurchaseOrder
-            10: "page_10_purchase_order"    # ContractSigning (reuse last column for now)
+            10: "page_10_contract_signing"  # ContractSigning (separate column for 100%)
         }
         
         page_field = page_field_mapping.get(request.page_number)
@@ -541,13 +549,20 @@ def get_all_progress():
             ).first()
             
             if progress:
+                # Handle current_page > 10 (completed workflows)
+                current_page = progress.current_page
+                if current_page > 10:
+                    current_page_name = "Completed"
+                else:
+                    current_page_name = WORKFLOW_PAGES.get(current_page, {}).get("label", f"Page {current_page}")
+                
                 result.append({
                     "project_id": project.id,
                     "project_title": project.title,
                     "department": project.department,
                     "priority": project.priority,
                     "current_page": progress.current_page,
-                    "current_page_name": WORKFLOW_PAGES[progress.current_page]["label"],
+                    "current_page_name": current_page_name,
                     "overall_progress": progress.overall_progress,
                     "status": progress.status,
                     "created_at": project.created_at.isoformat() if project.created_at else None,
@@ -692,6 +707,11 @@ def get_progress_summary():
         for i in range(1, 11):
             count = sum(1 for p in all_progress if p.current_page == i)
             by_page[WORKFLOW_PAGES[i]["label"]] = count
+        
+        # Add count for completed projects (page 11)
+        completed_count = sum(1 for p in all_progress if p.current_page > 10)
+        if completed_count > 0:
+            by_page["Completed"] = completed_count
         
         logger.info("=" * 60)
         logger.info("API RESPONSE: GET /requirements/progress/summary - SUCCESS")

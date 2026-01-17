@@ -1395,8 +1395,6 @@ def remove_progress(project_id: str):
         db.close()
 
 
-# ==================== PROJECT NAVIGATION APIs ====================
-
 class NavigationUpdate(BaseModel):
     """Request body for updating navigation"""
     current_stage: int

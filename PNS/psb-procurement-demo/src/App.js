@@ -110,10 +110,12 @@ function App() {
         console.log('Fallback: Calculated stage from progress:', frontendStage);
       }
       
-      // Handle completed workflows (stage 10 = complete)
-      if (frontendStage >= 10 || project.overall_progress === 100) {
-        console.log('Workflow is complete - showing completion screen');
-        frontendStage = 9; // Show ContractSigning with completion state
+      // Handle completed workflows - ONLY use navigation stage, not overall_progress
+      // Navigation stage 10 = ProcurementComplete, stage 11 = Workflow Complete
+      // Do NOT check overall_progress as it can be 100% before ContractSigning is done
+      if (frontendStage >= 11) {
+        console.log('Workflow is fully complete - showing completion screen');
+        frontendStage = 10; // Show ProcurementComplete
       }
 
       console.log('-'.repeat(60));

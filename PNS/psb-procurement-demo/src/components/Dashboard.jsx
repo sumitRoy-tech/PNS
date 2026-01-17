@@ -2,8 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, FileText, Clock, CheckCircle, XCircle, Send, 
   TrendingUp, AlertTriangle, Calendar, ArrowRight, Eye,
-  Activity, Target, BarChart3, Loader2, X
+  Activity, Target, BarChart3, Loader2, X, RefreshCw
 } from 'lucide-react';
+
+// Custom scrollbar styles
+const scrollbarStyles = `
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+    margin: 4px 0;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.5);
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.8);
+  }
+`;
 
 function Dashboard({ onNewRequirement, onViewRequirement, onViewProjectById, requirements }) {
 
@@ -186,6 +209,8 @@ function Dashboard({ onNewRequirement, onViewRequirement, onViewProjectById, req
 
   return (
     <div className="space-y-6">
+      {/* Custom scrollbar styles */}
+      <style>{scrollbarStyles}</style>
       
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-psb-green/20 to-psb-gold/20 border border-psb-green/30 rounded-xl p-6">
@@ -289,23 +314,23 @@ function Dashboard({ onNewRequirement, onViewRequirement, onViewProjectById, req
       )}
 
       {/* Main Content Grid - Changed to full width for progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
         {/* Project Progress List - Now takes 3 columns */}
-        <div className="lg:col-span-3 bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-5">
+        <div className="lg:col-span-3 bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-5 h-fit">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <Activity size={20} className="text-psb-gold" />
               Project Progress
               <span className="text-slate-400 text-sm font-normal ml-2">
-                ({progressData.filter(p => !isProjectRejected(p.project_id)).length} active projects)
+                ({progressData.filter(p => !isProjectRejected(p.project_id) && p.overall_progress < 100).length} in progress)
               </span>
             </h3>
             <button 
               onClick={fetchAllData}
-              className="text-slate-400 hover:text-white text-sm flex items-center gap-1"
+              className="text-slate-400 hover:text-white text-sm flex items-center gap-1.5 hover:bg-slate-700/50 px-2 py-1 rounded transition-colors"
             >
-              <Loader2 size={14} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               Refresh
             </button>
           </div>
@@ -314,20 +339,21 @@ function Dashboard({ onNewRequirement, onViewRequirement, onViewProjectById, req
             <div className="flex items-center justify-center py-12">
               <Loader2 size={32} className="text-psb-green animate-spin" />
             </div>
-          ) : progressData.length === 0 ? (
+          ) : progressData.filter(p => !isProjectRejected(p.project_id) && p.overall_progress < 100).length === 0 ? (
             <div className="text-center py-12">
               <Target size={48} className="text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-400">No projects with progress tracking</p>
+              <p className="text-slate-400">No projects in progress</p>
               <p className="text-slate-500 text-sm">Create a new requirement to start tracking</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-              {progressData.map((project, index) => {
+            <div 
+              className="custom-scrollbar space-y-3 overflow-y-auto -mr-2 pr-2"
+              style={{ maxHeight: progressData.filter(p => !isProjectRejected(p.project_id) && p.overall_progress < 100).length > 4 ? '520px' : 'none' }}
+            >
+              {progressData
+                .filter(p => !isProjectRejected(p.project_id) && p.overall_progress < 100)
+                .map((project, index) => {
                 const navInfo = getProjectNavigation(project.project_id);
-                const isRejected = isProjectRejected(project.project_id);
-                
-                // Skip rejected projects in this list
-                if (isRejected) return null;
                 
                 return (
                 <div 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, ArrowRight, Star, Award, Building } from 'lucide-react';
+import { UserCheck, ArrowRight, Star, Award, Building, Loader2, FileText, CheckCircle, ShoppingCart } from 'lucide-react';
 
 function VendorEvaluation({ requirement, workflowData, onComplete }) {
   const [vendors, setVendors] = useState([]);
@@ -8,6 +8,7 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittingStep, setSubmittingStep] = useState('');
   
   // Store full evaluation response for API submission
   const [evaluationData, setEvaluationData] = useState(null);
@@ -236,6 +237,7 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
       }
 
       setSubmitting(true);
+      setSubmittingStep('creating');
 
       // Log page tracking info
       console.log('='.repeat(60));
@@ -275,8 +277,14 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
 
       console.log("Purchase order created:", data);
 
+      // Update progress
+      setSubmittingStep('updating');
+
       // Update progress tracking - Mark Page 8 as complete
       const progressData = await updateProgress(projectId, PAGE_INFO.currentPage);
+
+      // Update navigation
+      setSubmittingStep('finalizing');
 
       // Update navigation in database
       console.log('-'.repeat(60));
@@ -320,12 +328,41 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
       alert("Server error while creating purchase order: " + err.message);
     } finally {
       setSubmitting(false);
+      setSubmittingStep('');
     }
   };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
   };
+
+  // Get loading button content for PO creation
+  const getSubmitButtonContent = () => {
+    switch (submittingStep) {
+      case 'creating':
+        return {
+          text: 'Generating Purchase Order...',
+          icon: <Loader2 size={18} className="animate-spin" />
+        };
+      case 'updating':
+        return {
+          text: 'Updating Progress...',
+          icon: <Loader2 size={18} className="animate-spin" />
+        };
+      case 'finalizing':
+        return {
+          text: 'Finalizing...',
+          icon: <CheckCircle size={18} className="animate-pulse" />
+        };
+      default:
+        return {
+          text: 'Confirm L1 & Issue Purchase Order',
+          icon: <ArrowRight size={18} />
+        };
+    }
+  };
+
+  const submitButtonContent = getSubmitButtonContent();
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
@@ -375,6 +412,83 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
         </div>
       )}
 
+      {/* PO Generation Loading Overlay */}
+      {submitting && (
+        <div className="mb-6 p-5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center">
+                <ShoppingCart size={28} className="text-amber-400" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-800 rounded-full flex items-center justify-center">
+                <Loader2 size={14} className="text-amber-400 animate-spin" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="text-amber-400 font-medium text-lg">
+                {submittingStep === 'creating' && 'Generating Purchase Order...'}
+                {submittingStep === 'updating' && 'Updating Workflow Progress...'}
+                {submittingStep === 'finalizing' && 'Finalizing Purchase Order...'}
+              </p>
+              <p className="text-slate-400 text-sm mt-1">
+                {submittingStep === 'creating' && 'Creating PO document with L1 vendor details. This may take a moment...'}
+                {submittingStep === 'updating' && 'Recording completion status in the system...'}
+                {submittingStep === 'finalizing' && 'Almost done! Preparing for next stage...'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Progress Steps */}
+          <div className="flex items-center gap-2 mt-5 pt-4 border-t border-amber-500/20">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+              submittingStep === 'creating' ? 'bg-amber-500/30 text-amber-300' : 
+              ['updating', 'finalizing'].includes(submittingStep) ? 'bg-psb-green/30 text-psb-green' : 'bg-slate-600 text-slate-400'
+            }`}>
+              {['updating', 'finalizing'].includes(submittingStep) ? (
+                <CheckCircle size={16} />
+              ) : (
+                <Loader2 size={16} className={submittingStep === 'creating' ? 'animate-spin' : ''} />
+              )}
+              <span>Create PO</span>
+            </div>
+            <div className="w-8 h-px bg-slate-600"></div>
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+              submittingStep === 'updating' ? 'bg-amber-500/30 text-amber-300' : 
+              submittingStep === 'finalizing' ? 'bg-psb-green/30 text-psb-green' : 'bg-slate-600 text-slate-400'
+            }`}>
+              {submittingStep === 'finalizing' ? (
+                <CheckCircle size={16} />
+              ) : (
+                <Loader2 size={16} className={submittingStep === 'updating' ? 'animate-spin' : ''} />
+              )}
+              <span>Update Progress</span>
+            </div>
+            <div className="w-8 h-px bg-slate-600"></div>
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+              submittingStep === 'finalizing' ? 'bg-amber-500/30 text-amber-300' : 'bg-slate-600 text-slate-400'
+            }`}>
+              <Loader2 size={16} className={submittingStep === 'finalizing' ? 'animate-spin' : ''} />
+              <span>Finalize</span>
+            </div>
+          </div>
+
+          {/* L1 Vendor Info in Loading */}
+          {selectedVendor && (
+            <div className="mt-4 p-3 bg-slate-700/50 rounded-lg flex items-center gap-3">
+              <Award size={20} className="text-psb-gold" />
+              <div>
+                <p className="text-slate-400 text-xs">Creating PO for L1 Vendor</p>
+                <p className="text-white font-medium">{selectedVendor.name}</p>
+              </div>
+              <div className="ml-auto text-right">
+                <p className="text-slate-400 text-xs">Contract Value</p>
+                <p className="text-psb-green font-bold">{formatCurrency(selectedVendor.commercial)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Selected Vendors Table - Shows before evaluation */}
       {!evaluationComplete && (
         <div className="mb-6">
@@ -382,6 +496,7 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
           
           {loading ? (
             <div className="text-center py-8 bg-slate-700/20 rounded-lg">
+              <Loader2 size={24} className="text-slate-400 animate-spin mx-auto mb-2" />
               <p className="text-slate-400">Loading vendors...</p>
             </div>
           ) : vendors.length === 0 ? (
@@ -430,16 +545,26 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
             <button
               onClick={runEvaluation}
               disabled={evaluating || loading || vendors.length === 0}
-              className="px-6 py-3 bg-psb-gold text-slate-900 rounded-lg font-medium hover:bg-psb-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 bg-psb-gold text-slate-900 rounded-lg font-medium hover:bg-psb-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {evaluating ? "Evaluating..." : "Run Evaluation"}
+              {evaluating ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Evaluating Vendors...
+                </>
+              ) : (
+                <>
+                  <Star size={18} />
+                  Run Evaluation
+                </>
+              )}
             </button>
           </div>
         </div>
       )}
 
       {/* Evaluation Results - Shows after evaluation */}
-      {evaluationComplete && (
+      {evaluationComplete && !submitting && (
         <>
           {/* Evaluation Criteria */}
           <div className="bg-slate-700/30 rounded-lg p-4 mb-6">
@@ -547,18 +672,28 @@ function VendorEvaluation({ requirement, workflowData, onComplete }) {
       {/* Submit with Progress Info */}
       <div className="flex justify-between items-center pt-6 border-t border-slate-700">
         <div className="text-slate-500 text-sm">
-          <span>Completing this will mark </span>
-          <span className="text-amber-400 font-medium">Page {PAGE_INFO.currentPage}</span>
-          <span> as done → Next: </span>
-          <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+          {!evaluationComplete ? (
+            <span className="text-yellow-400">⚠ Please run evaluation first</span>
+          ) : (
+            <>
+              <span>Completing this will mark </span>
+              <span className="text-amber-400 font-medium">Page {PAGE_INFO.currentPage}</span>
+              <span> as done → Next: </span>
+              <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+            </>
+          )}
         </div>
         <button
           onClick={handleSubmit}
           disabled={!evaluationComplete || submitting}
-          className="flex items-center gap-2 px-6 py-3 bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 font-medium"
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium min-w-[300px] justify-center ${
+            submitting 
+              ? 'bg-amber-600 text-white cursor-wait' 
+              : 'bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 disabled:cursor-not-allowed text-white'
+          }`}
         >
-          {submitting ? "Creating PO..." : "Confirm L1 & Issue Purchase Order"}
-          <ArrowRight size={18} />
+          {submitButtonContent.text}
+          {submitButtonContent.icon}
         </button>
       </div>
     </div>

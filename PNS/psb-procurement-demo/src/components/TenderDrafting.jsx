@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ClipboardCheck, ArrowRight, FileText, Download } from 'lucide-react';
+import { ClipboardCheck, ArrowRight, FileText, Download, Loader2, CheckCircle } from 'lucide-react';
 
 function TenderDrafting({ requirement, workflowData, onComplete }) {
   const [tender, setTender] = useState({
     tenderType: '',
-    bidValidity: '90 days',
+    bidValidity: '',
     submissionDeadline: '',
     technicalCriteria: '',
     commercialCriteria: '',
@@ -23,6 +23,7 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
 
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
 
   // Page tracking - This is Page 4 in the 10-page workflow
   const PAGE_INFO = {
@@ -69,6 +70,33 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
   // Get rfp_id and project_id from workflowData (passed from TechnicalReview)
   const rfpId = workflowData?.generatedRfp?.rfpId;
   const projectId = workflowData?.generatedRfp?.projectId || requirement?.project_id || requirement?.reqId || requirement?.projectId;
+
+  // Check if all required fields are filled
+  const allFieldsFilled = 
+    tender.tenderType !== '' &&
+    tender.bidValidity !== '' &&
+    tender.submissionDeadline !== '' &&
+    tender.emdAmount.trim() !== '' &&
+    tender.eligibilityCriteria.trim() !== '';
+
+  // Check if all sections are checked
+  const allSectionsComplete = Object.values(sections).every(v => v);
+
+  // Form is valid when all fields are filled AND all sections are checked
+  const isFormValid = allFieldsFilled && allSectionsComplete;
+
+  // Calculate completion counts
+  const filledFieldsCount = [
+    tender.tenderType,
+    tender.bidValidity,
+    tender.submissionDeadline,
+    tender.emdAmount.trim(),
+    tender.eligibilityCriteria.trim()
+  ].filter(v => v !== '').length;
+  const totalFields = 5;
+
+  const checkedSectionsCount = Object.values(sections).filter(v => v).length;
+  const totalSections = Object.keys(sections).length;
 
   // Update progress tracking API call
   const updateProgress = async (projId, pageNumber) => {
@@ -136,6 +164,7 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
       }
 
       setLoading(true);
+      setLoadingStep('submitting');
 
       // Log page tracking info
       console.log('='.repeat(60));
@@ -168,10 +197,14 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
 
       console.log("Tender draft saved:", data);
 
+      // Update progress
+      setLoadingStep('updating');
+
       // Update progress tracking - Mark Page 4 as complete
       const progressData = await updateProgress(projectId, PAGE_INFO.currentPage);
 
       // Update navigation in database
+      setLoadingStep('finalizing');
       console.log('-'.repeat(60));
       console.log('UPDATING NAVIGATION:');
       const navData = await updateNavigation(projectId);
@@ -211,10 +244,37 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
       alert("Server error while submitting tender draft");
     } finally {
       setLoading(false);
+      setLoadingStep('');
     }
   };
 
-  const allSectionsComplete = Object.values(sections).every(v => v);
+  // Get loading button content
+  const getLoadingContent = () => {
+    switch (loadingStep) {
+      case 'submitting':
+        return {
+          text: 'Submitting Tender Draft...',
+          icon: <Loader2 size={18} className="animate-spin" />
+        };
+      case 'updating':
+        return {
+          text: 'Updating Progress...',
+          icon: <Loader2 size={18} className="animate-spin" />
+        };
+      case 'finalizing':
+        return {
+          text: 'Finalizing...',
+          icon: <CheckCircle size={18} className="animate-pulse" />
+        };
+      default:
+        return {
+          text: 'Submit for In-Principle Approval',
+          icon: <ArrowRight size={18} />
+        };
+    }
+  };
+
+  const loadingContent = getLoadingContent();
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
@@ -267,9 +327,50 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
         </div>
       )}
 
+      {/* Form Completion Status */}
+      <div className="bg-slate-700/30 rounded-lg p-3 mb-6">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400">Form Completion:</span>
+          <div className="flex items-center gap-4">
+            <span className={`${filledFieldsCount === totalFields ? 'text-psb-green' : 'text-yellow-400'}`}>
+              Fields: {filledFieldsCount}/{totalFields}
+            </span>
+            <span className={`${checkedSectionsCount === totalSections ? 'text-psb-green' : 'text-yellow-400'}`}>
+              Sections: {checkedSectionsCount}/{totalSections}
+            </span>
+            {isFormValid && (
+              <span className="text-psb-green font-medium">✓ Ready to submit</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Loader2 size={24} className="text-orange-400 animate-spin" />
+            <div className="flex-1">
+              <p className="text-orange-400 font-medium">
+                {loadingStep === 'submitting' && 'Step 1/3: Submitting Tender Draft...'}
+                {loadingStep === 'updating' && 'Step 2/3: Updating Progress...'}
+                {loadingStep === 'finalizing' && 'Step 3/3: Finalizing...'}
+              </p>
+              <p className="text-slate-400 text-sm mt-1">
+                {loadingStep === 'submitting' && 'Saving tender parameters to the database...'}
+                {loadingStep === 'updating' && 'Recording workflow progress...'}
+                {loadingStep === 'finalizing' && 'Preparing for approval stage...'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Template Selection */}
       <div className="bg-slate-700/30 rounded-lg p-4 mb-6">
-        <h3 className="text-psb-gold font-medium mb-3">Select RFP Template</h3>
+        <h3 className="text-psb-gold font-medium mb-3">
+          Select RFP Template <span className="text-red-400">*</span>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {['Open Tender', 'Limited Tender', 'Single Source'].map(type => (
             <label 
@@ -278,13 +379,14 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
                 tender.tenderType === type 
                   ? 'bg-psb-green/20 border-psb-green' 
                   : 'bg-slate-600/30 border-slate-600 hover:border-slate-500'
-              }`}
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <input
                 type="radio"
                 name="tenderType"
                 checked={tender.tenderType === type}
                 onChange={() => setTender({...tender, tenderType: type})}
+                disabled={loading}
                 className="w-4 h-4 text-psb-green"
               />
               <span className="text-white text-sm">{type}</span>
@@ -296,15 +398,24 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Tender Parameters */}
         <div className="space-y-4">
-          <h3 className="text-psb-gold font-medium">Tender Parameters</h3>
+          <h3 className="text-psb-gold font-medium">
+            Tender Parameters <span className="text-red-400 text-sm">(All fields required)</span>
+          </h3>
           
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Bid Validity Period</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Bid Validity Period <span className="text-red-400">*</span>
+            </label>
             <select
               value={tender.bidValidity}
               onChange={(e) => setTender({...tender, bidValidity: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white"
+              disabled={loading}
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white disabled:opacity-50 ${
+                tender.bidValidity ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             >
+              <option value="">Select Validity Period</option>
               <option value="60 days">60 Days</option>
               <option value="90 days">90 Days</option>
               <option value="120 days">120 Days</option>
@@ -313,41 +424,61 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Submission Deadline</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Submission Deadline <span className="text-red-400">*</span>
+            </label>
             <input
               type="date"
               value={tender.submissionDeadline}
               onChange={(e) => setTender({...tender, submissionDeadline: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white"
+              disabled={loading}
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white disabled:opacity-50 ${
+                tender.submissionDeadline ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             />
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm mb-1">EMD Amount</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              EMD Amount <span className="text-red-400">*</span>
+            </label>
             <input
               type="text"
               value={tender.emdAmount}
               onChange={(e) => setTender({...tender, emdAmount: e.target.value})}
+              disabled={loading}
               placeholder="e.g., Rs. 5,00,000"
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400"
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 disabled:opacity-50 ${
+                tender.emdAmount.trim() ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             />
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Eligibility Criteria</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Eligibility Criteria <span className="text-red-400">*</span>
+            </label>
             <textarea
               value={tender.eligibilityCriteria}
               onChange={(e) => setTender({...tender, eligibilityCriteria: e.target.value})}
+              disabled={loading}
               rows={3}
               placeholder="Minimum turnover, experience, certifications..."
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 resize-none"
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 resize-none disabled:opacity-50 ${
+                tender.eligibilityCriteria.trim() ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             />
           </div>
         </div>
 
         {/* Document Sections Checklist */}
         <div>
-          <h3 className="text-psb-gold font-medium mb-4">RFP Document Sections</h3>
+          <h3 className="text-psb-gold font-medium mb-4">
+            RFP Document Sections <span className="text-red-400 text-sm">(All required)</span>
+          </h3>
           <div className="space-y-3">
             {[
               { key: 'scopeOfWork', label: 'Scope of Work', desc: 'Detailed requirements and deliverables' },
@@ -363,18 +494,22 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
                   sections[item.key] 
                     ? 'bg-psb-green/10 border-psb-green/50' 
                     : 'bg-slate-700/30 border-slate-600 hover:border-slate-500'
-                }`}
+                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <input
                   type="checkbox"
                   checked={sections[item.key]}
                   onChange={(e) => setSections({...sections, [item.key]: e.target.checked})}
+                  disabled={loading}
                   className="w-5 h-5 mt-0.5 rounded border-slate-500 text-psb-green focus:ring-psb-green"
                 />
                 <div>
                   <span className="text-white text-sm font-medium">{item.label}</span>
                   <p className="text-slate-400 text-xs">{item.desc}</p>
                 </div>
+                {sections[item.key] && (
+                  <CheckCircle size={16} className="text-psb-green ml-auto mt-0.5" />
+                )}
               </label>
             ))}
           </div>
@@ -382,10 +517,10 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
           {/* Download Draft Button */}
           <button
             onClick={handleDownloadRFP}
-            disabled={generating}
-            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+            disabled={generating || loading}
+            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
           >
-            <Download size={18} />
+            {generating ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
             {generating ? "Downloading..." : "Download Draft RFP (Preview)"}
           </button>
         </div>
@@ -394,18 +529,30 @@ function TenderDrafting({ requirement, workflowData, onComplete }) {
       {/* Submit with Progress Info */}
       <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-700">
         <div className="text-slate-500 text-sm">
-          <span>Completing this will mark </span>
-          <span className="text-orange-400 font-medium">Page {PAGE_INFO.currentPage}</span>
-          <span> as done → Next: </span>
-          <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+          {!isFormValid ? (
+            <span className="text-yellow-400">
+              ⚠ Please complete all fields ({filledFieldsCount}/{totalFields}) and sections ({checkedSectionsCount}/{totalSections})
+            </span>
+          ) : (
+            <>
+              <span>Completing this will mark </span>
+              <span className="text-orange-400 font-medium">Page {PAGE_INFO.currentPage}</span>
+              <span> as done → Next: </span>
+              <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+            </>
+          )}
         </div>
         <button
           onClick={handleSubmit}
-          disabled={!allSectionsComplete || !tender.tenderType || loading}
-          className="flex items-center gap-2 px-6 py-3 bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 font-medium"
+          disabled={!isFormValid || loading}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium min-w-[280px] justify-center ${
+            loading 
+              ? 'bg-orange-600 text-white cursor-wait' 
+              : 'bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 disabled:cursor-not-allowed text-white'
+          }`}
         >
-          {loading ? "Submitting..." : "Submit for In-Principle Approval"}
-          <ArrowRight size={18} />
+          {loadingContent.text}
+          {loadingContent.icon}
         </button>
       </div>
     </div>

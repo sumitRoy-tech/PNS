@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, ArrowRight, Shield, Server, Database } from 'lucide-react';
+import { Users, ArrowRight, Shield, Server, Database, Loader2, FileText, CheckCircle } from 'lucide-react';
 
 function TechnicalReview({ requirement, workflowData, onComplete }) {
   const [review, setReview] = useState({
@@ -11,6 +11,7 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
   });
 
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(''); // Track which step is in progress
   const [error, setError] = useState(null);
 
   // Page tracking - This is Page 3 (includes RFP generation as part of this step)
@@ -58,6 +59,28 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
   // Get project ID
   const projectId = requirement?.project_id || requirement?.id || requirement?.reqId || requirement?.projectId;
 
+  // Check if all form fields are filled
+  const allFieldsFilled = 
+    review.architectureReview !== '' &&
+    review.securityAssessment !== '' &&
+    review.integrationComplexity !== '' &&
+    review.complianceCheck !== '' &&
+    review.technicalRecommendation.trim() !== '';
+
+  // Button is enabled only when ALL fields are filled
+  const isFormValid = allFieldsFilled;
+
+  // Calculate completion status for visual feedback
+  const getFieldStatus = (value) => {
+    if (typeof value === 'string') {
+      return value.trim() !== '';
+    }
+    return !!value;
+  };
+
+  const filledFieldsCount = Object.values(review).filter(v => getFieldStatus(v)).length;
+  const totalFields = Object.keys(review).length;
+
   // Update progress tracking API call
   const updateProgress = async (projId, pageNumber) => {
     try {
@@ -102,6 +125,7 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
     try {
       setLoading(true);
       setError(null);
+      setLoadingStep('submitting');
 
       // Log page tracking info
       console.log('='.repeat(60));
@@ -128,6 +152,7 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
       console.log("Technical review submitted:", submitData);
 
       // Step 2: Generate RFP (part of Page 3)
+      setLoadingStep('generating');
       console.log('-'.repeat(60));
       console.log('Step 2: Generating RFP...');
 
@@ -146,6 +171,9 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
 
       const rfpData = await generateRes.json();
       console.log("RFP generated:", rfpData);
+
+      // Step 3: Update progress
+      setLoadingStep('finalizing');
 
       // Update progress - Mark Page 3 as complete
       const progressData = await updateProgress(projectId, PAGE_INFO.currentPage);
@@ -196,8 +224,37 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
       alert("Error: " + err.message);
     } finally {
       setLoading(false);
+      setLoadingStep('');
     }
   };
+
+  // Get loading button text and icon based on current step
+  const getLoadingContent = () => {
+    switch (loadingStep) {
+      case 'submitting':
+        return {
+          text: 'Submitting Technical Review...',
+          icon: <Loader2 size={18} className="animate-spin" />
+        };
+      case 'generating':
+        return {
+          text: 'Generating RFP Document...',
+          icon: <FileText size={18} className="animate-pulse" />
+        };
+      case 'finalizing':
+        return {
+          text: 'Finalizing...',
+          icon: <CheckCircle size={18} className="animate-pulse" />
+        };
+      default:
+        return {
+          text: 'Submit and Generate RFP',
+          icon: <ArrowRight size={18} />
+        };
+    }
+  };
+
+  const loadingContent = getLoadingContent();
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
@@ -252,21 +309,89 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
         </div>
       </div>
 
+      {/* Form Completion Status */}
+      <div className="bg-slate-700/30 rounded-lg p-3 mb-6">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400">Form Completion:</span>
+          <div className="flex items-center gap-4">
+            <span className={`${filledFieldsCount === totalFields ? 'text-psb-green' : 'text-yellow-400'}`}>
+              Fields: {filledFieldsCount}/{totalFields}
+            </span>
+            {isFormValid && (
+              <span className="text-psb-green font-medium">✓ Ready to submit</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Loader2 size={24} className="text-purple-400 animate-spin" />
+            </div>
+            <div className="flex-1">
+              <p className="text-purple-400 font-medium">
+                {loadingStep === 'submitting' && 'Step 1/3: Submitting Technical Review...'}
+                {loadingStep === 'generating' && 'Step 2/3: Generating RFP Document...'}
+                {loadingStep === 'finalizing' && 'Step 3/3: Finalizing & Updating Progress...'}
+              </p>
+              <p className="text-slate-400 text-sm mt-1">
+                {loadingStep === 'submitting' && 'Saving your technical assessment to the database...'}
+                {loadingStep === 'generating' && 'AI is creating the RFP document. This may take a moment...'}
+                {loadingStep === 'finalizing' && 'Almost done! Updating workflow progress...'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Progress Steps */}
+          <div className="flex items-center gap-2 mt-4">
+            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+              loadingStep === 'submitting' ? 'bg-purple-500/30 text-purple-300' : 
+              ['generating', 'finalizing'].includes(loadingStep) ? 'bg-psb-green/30 text-psb-green' : 'bg-slate-600 text-slate-400'
+            }`}>
+              {['generating', 'finalizing'].includes(loadingStep) ? <CheckCircle size={12} /> : <Loader2 size={12} className={loadingStep === 'submitting' ? 'animate-spin' : ''} />}
+              <span>Submit</span>
+            </div>
+            <div className="w-4 h-px bg-slate-600"></div>
+            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+              loadingStep === 'generating' ? 'bg-purple-500/30 text-purple-300' : 
+              loadingStep === 'finalizing' ? 'bg-psb-green/30 text-psb-green' : 'bg-slate-600 text-slate-400'
+            }`}>
+              {loadingStep === 'finalizing' ? <CheckCircle size={12} /> : <Loader2 size={12} className={loadingStep === 'generating' ? 'animate-spin' : ''} />}
+              <span>Generate RFP</span>
+            </div>
+            <div className="w-4 h-px bg-slate-600"></div>
+            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+              loadingStep === 'finalizing' ? 'bg-purple-500/30 text-purple-300' : 'bg-slate-600 text-slate-400'
+            }`}>
+              <Loader2 size={12} className={loadingStep === 'finalizing' ? 'animate-spin' : ''} />
+              <span>Finalize</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Technical Review Areas */}
       <div className="space-y-6">
-        <h3 className="text-psb-gold font-medium">Technical Assessment Areas</h3>
+        <h3 className="text-psb-gold font-medium">Technical Assessment Areas <span className="text-red-400 text-sm">(All fields required)</span></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Architecture Review */}
           <div className="bg-slate-700/30 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Server size={18} className="text-blue-400" />
-              <h4 className="text-white font-medium">Architecture Review</h4>
+              <h4 className="text-white font-medium">Architecture Review <span className="text-red-400">*</span></h4>
             </div>
             <select
               value={review.architectureReview}
               onChange={(e) => setReview({ ...review, architectureReview: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-sm"
+              disabled={loading}
+              className={`w-full px-3 py-2 bg-slate-600/50 border rounded-lg text-white text-sm disabled:opacity-50 ${
+                review.architectureReview ? 'border-psb-green' : 'border-slate-500'
+              }`}
+              required
             >
               <option value="">Select Status</option>
               <option value="Compatible with existing architecture">Compatible with existing architecture</option>
@@ -280,12 +405,16 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
           <div className="bg-slate-700/30 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Shield size={18} className="text-green-400" />
-              <h4 className="text-white font-medium">Security Assessment</h4>
+              <h4 className="text-white font-medium">Security Assessment <span className="text-red-400">*</span></h4>
             </div>
             <select
               value={review.securityAssessment}
               onChange={(e) => setReview({ ...review, securityAssessment: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-sm"
+              disabled={loading}
+              className={`w-full px-3 py-2 bg-slate-600/50 border rounded-lg text-white text-sm disabled:opacity-50 ${
+                review.securityAssessment ? 'border-psb-green' : 'border-slate-500'
+              }`}
+              required
             >
               <option value="">Select Status</option>
               <option value="Meets all security requirements">Meets all security requirements</option>
@@ -299,12 +428,16 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
           <div className="bg-slate-700/30 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Database size={18} className="text-yellow-400" />
-              <h4 className="text-white font-medium">Integration Complexity</h4>
+              <h4 className="text-white font-medium">Integration Complexity <span className="text-red-400">*</span></h4>
             </div>
             <select
               value={review.integrationComplexity}
               onChange={(e) => setReview({ ...review, integrationComplexity: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-sm"
+              disabled={loading}
+              className={`w-full px-3 py-2 bg-slate-600/50 border rounded-lg text-white text-sm disabled:opacity-50 ${
+                review.integrationComplexity ? 'border-psb-green' : 'border-slate-500'
+              }`}
+              required
             >
               <option value="">Select Complexity</option>
               <option value="Simple - Standard APIs">Simple - Standard APIs</option>
@@ -318,12 +451,16 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
           <div className="bg-slate-700/30 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Shield size={18} className="text-orange-400" />
-              <h4 className="text-white font-medium">RBI/Compliance Check</h4>
+              <h4 className="text-white font-medium">RBI/Compliance Check <span className="text-red-400">*</span></h4>
             </div>
             <select
               value={review.complianceCheck}
               onChange={(e) => setReview({ ...review, complianceCheck: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-sm"
+              disabled={loading}
+              className={`w-full px-3 py-2 bg-slate-600/50 border rounded-lg text-white text-sm disabled:opacity-50 ${
+                review.complianceCheck ? 'border-psb-green' : 'border-slate-500'
+              }`}
+              required
             >
               <option value="">Select Status</option>
               <option value="Fully Compliant">Fully Compliant</option>
@@ -336,13 +473,19 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
 
         {/* Technical Recommendation */}
         <div>
-          <label className="block text-slate-300 text-sm mb-2">Technical Committee Recommendation</label>
+          <label className="block text-slate-300 text-sm mb-2">
+            Technical Committee Recommendation <span className="text-red-400">*</span>
+          </label>
           <textarea
             value={review.technicalRecommendation}
             onChange={(e) => setReview({ ...review, technicalRecommendation: e.target.value })}
+            disabled={loading}
             rows={4}
             placeholder="Enter technical committee's recommendations, concerns, and suggestions..."
-            className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 resize-none"
+            className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 resize-none disabled:opacity-50 ${
+              review.technicalRecommendation.trim() ? 'border-psb-green' : 'border-slate-600'
+            }`}
+            required
           />
         </div>
       </div>
@@ -350,18 +493,30 @@ function TechnicalReview({ requirement, workflowData, onComplete }) {
       {/* Submit with Progress Info */}
       <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-700">
         <div className="text-slate-500 text-sm">
-          <span>Completing this will mark </span>
-          <span className="text-purple-400 font-medium">Page {PAGE_INFO.currentPage}</span>
-          <span> as done → Next: </span>
-          <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+          {!isFormValid ? (
+            <span className="text-yellow-400">
+              ⚠ Please complete all fields ({filledFieldsCount}/{totalFields})
+            </span>
+          ) : (
+            <>
+              <span>Completing this will mark </span>
+              <span className="text-purple-400 font-medium">Page {PAGE_INFO.currentPage}</span>
+              <span> as done → Next: </span>
+              <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+            </>
+          )}
         </div>
         <button
           onClick={handleSubmit}
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-3 bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 text-white rounded-lg transition-all duration-200 font-medium"
+          disabled={loading || !isFormValid}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium min-w-[260px] justify-center ${
+            loading 
+              ? 'bg-purple-600 text-white cursor-wait' 
+              : 'bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 disabled:cursor-not-allowed text-white'
+          }`}
         >
-          {loading ? "Submitting & Generating RFP..." : "Submit and Generate RFP"}
-          <ArrowRight size={18} />
+          {loadingContent.text}
+          {loadingContent.icon}
         </button>
       </div>
     </div>

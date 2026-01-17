@@ -61,7 +61,18 @@ function FunctionalAnalysis({ requirement, onComplete }) {
     return null;
   };
 
+  // Check if all checklist items are checked
   const allChecked = Object.values(checklist).every(v => v);
+
+  // Check if all form fields are filled
+  const allFieldsFilled = 
+    analysis.functionalFit !== '' &&
+    analysis.technicalFeasibility !== '' &&
+    analysis.riskAssessment !== '' &&
+    analysis.recommendations.trim() !== '';
+
+  // Button is enabled only when ALL fields are filled AND all checklist items are checked
+  const isFormValid = allChecked && allFieldsFilled;
 
   // Get project ID
   const projectId = requirement?.project_id || requirement?.reqId || requirement?.projectId;
@@ -211,6 +222,19 @@ function FunctionalAnalysis({ requirement, onComplete }) {
     }
   };
 
+  // Calculate completion status for visual feedback
+  const getFieldStatus = (value) => {
+    if (typeof value === 'string') {
+      return value.trim() !== '';
+    }
+    return !!value;
+  };
+
+  const filledFieldsCount = Object.values(analysis).filter(v => getFieldStatus(v)).length;
+  const totalFields = Object.keys(analysis).length;
+  const checkedCount = Object.values(checklist).filter(v => v).length;
+  const totalChecklist = Object.keys(checklist).length;
+
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
       {/* Header with Page Indicator */}
@@ -255,17 +279,40 @@ function FunctionalAnalysis({ requirement, onComplete }) {
         </div>
       </div>
 
+      {/* Form Completion Status */}
+      <div className="bg-slate-700/30 rounded-lg p-3 mb-6">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400">Form Completion:</span>
+          <div className="flex items-center gap-4">
+            <span className={`${filledFieldsCount === totalFields ? 'text-psb-green' : 'text-yellow-400'}`}>
+              Fields: {filledFieldsCount}/{totalFields}
+            </span>
+            <span className={`${checkedCount === totalChecklist ? 'text-psb-green' : 'text-yellow-400'}`}>
+              Checklist: {checkedCount}/{totalChecklist}
+            </span>
+            {isFormValid && (
+              <span className="text-psb-green font-medium">✓ Ready to submit</span>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Analysis Form */}
         <div className="space-y-4">
-          <h3 className="text-psb-gold font-medium">Analysis Report</h3>
+          <h3 className="text-psb-gold font-medium">Analysis Report <span className="text-red-400 text-sm">(All fields required)</span></h3>
           
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Functional Fit Assessment</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Functional Fit Assessment <span className="text-red-400">*</span>
+            </label>
             <select
               value={analysis.functionalFit}
               onChange={(e) => setAnalysis({...analysis, functionalFit: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white"
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white ${
+                analysis.functionalFit ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             >
               <option value="">Select Assessment</option>
               <option value="Fully Meets Requirements">Fully Meets Requirements</option>
@@ -276,11 +323,16 @@ function FunctionalAnalysis({ requirement, onComplete }) {
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Technical Feasibility</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Technical Feasibility <span className="text-red-400">*</span>
+            </label>
             <select
               value={analysis.technicalFeasibility}
               onChange={(e) => setAnalysis({...analysis, technicalFeasibility: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white"
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white ${
+                analysis.technicalFeasibility ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             >
               <option value="">Select Feasibility</option>
               <option value="Highly Feasible">Highly Feasible</option>
@@ -291,11 +343,16 @@ function FunctionalAnalysis({ requirement, onComplete }) {
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Risk Assessment</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Risk Assessment <span className="text-red-400">*</span>
+            </label>
             <select
               value={analysis.riskAssessment}
               onChange={(e) => setAnalysis({...analysis, riskAssessment: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white"
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white ${
+                analysis.riskAssessment ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             >
               <option value="">Select Risk Level</option>
               <option value="Low Risk">Low Risk</option>
@@ -305,20 +362,25 @@ function FunctionalAnalysis({ requirement, onComplete }) {
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm mb-1">Recommendations</label>
+            <label className="block text-slate-300 text-sm mb-1">
+              Recommendations <span className="text-red-400">*</span>
+            </label>
             <textarea
               value={analysis.recommendations}
               onChange={(e) => setAnalysis({...analysis, recommendations: e.target.value})}
               rows={4}
               placeholder="Enter analysis recommendations..."
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 resize-none"
+              className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 resize-none ${
+                analysis.recommendations.trim() ? 'border-psb-green' : 'border-slate-600'
+              }`}
+              required
             />
           </div>
         </div>
 
         {/* Checklist */}
         <div>
-          <h3 className="text-psb-gold font-medium mb-4">Verification Checklist</h3>
+          <h3 className="text-psb-gold font-medium mb-4">Verification Checklist <span className="text-red-400 text-sm">(All required)</span></h3>
           <div className="space-y-3">
             {[
               { key: 'requirementsClear', label: 'Requirements are clear and complete' },
@@ -345,7 +407,7 @@ function FunctionalAnalysis({ requirement, onComplete }) {
 
           <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
             <p className="text-blue-300 text-sm">
-              <strong>Note:</strong> All checklist items must be verified before proceeding to Technical Review.
+              <strong>Note:</strong> All form fields and checklist items must be completed before proceeding to Technical Review.
             </p>
           </div>
         </div>
@@ -354,14 +416,22 @@ function FunctionalAnalysis({ requirement, onComplete }) {
       {/* Submit with Progress Info */}
       <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-700">
         <div className="text-slate-500 text-sm">
-          <span>Completing this will mark </span>
-          <span className="text-psb-gold font-medium">Page {PAGE_INFO.currentPage}</span>
-          <span> as done → Next: </span>
-          <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+          {!isFormValid ? (
+            <span className="text-yellow-400">
+              ⚠ Please complete all fields ({filledFieldsCount}/{totalFields}) and checklist ({checkedCount}/{totalChecklist})
+            </span>
+          ) : (
+            <>
+              <span>Completing this will mark </span>
+              <span className="text-psb-gold font-medium">Page {PAGE_INFO.currentPage}</span>
+              <span> as done → Next: </span>
+              <span className="text-slate-400">{PAGE_INFO.nextPageName}</span>
+            </>
+          )}
         </div>
         <button
           onClick={handleSubmit}
-          disabled={!allChecked || loading}
+          disabled={!isFormValid || loading}
           className="flex items-center gap-2 px-6 py-3 bg-psb-green hover:bg-psb-green-light disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 font-medium"
         >
           {loading ? "Submitting..." : "Complete Analysis & Proceed"}
